@@ -7,13 +7,11 @@ const nextConfig = {
     });
 
     // Ignore React Native modules in web build
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        'react-native-fs': false,
-        'react-native': false,
-      };
-    }
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'react-native-fs': false,
+      'react-native': false,
+    };
 
     return config;
   },

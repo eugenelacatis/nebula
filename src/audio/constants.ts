@@ -10,8 +10,8 @@ export const HIGHS_MIN = 4000;
 export const HIGHS_MAX = 16000;
 
 // Audio feature smoothing (per-frame lerp factor)
-export const FEATURE_SMOOTHING = 0.15;
+export const FEATURE_SMOOTHING = 0.25;
 
 // Beat detection
-export const BEAT_THRESHOLD = 0.6;
-export const BEAT_COOLDOWN_MS = 200;
+export const BEAT_THRESHOLD = 0.45;
+export const BEAT_COOLDOWN_MS = 180;

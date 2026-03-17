@@ -1,25 +1,43 @@
 import type { SongMetadata } from '@/store/appStore';
 
-// Simple filename-based metadata extraction for Phase 1
-// Phase 3 can add proper ID3 tag reading with a web-compatible library
 export async function extractMetadata(file: File): Promise<SongMetadata> {
-  const filename = stripExtension(file.name);
-  
-  // Try to parse "Artist - Title" format, otherwise use full filename as title
-  const parts = filename.split(' - ');
-  if (parts.length === 2) {
-    return {
-      title: parts[1].trim(),
-      artist: parts[0].trim(),
-    };
+  try {
+    const tags = await readID3Tags(file);
+    if (tags.title) {
+      return {
+        title: tags.title,
+        artist: tags.artist || 'Unknown Artist',
+      };
+    }
+  } catch {
+    // Fall through to filename parsing
   }
-  
-  return {
-    title: filename,
-    artist: 'Unknown Artist',
-  };
+  return parseFilename(file.name);
 }
 
-function stripExtension(filename: string): string {
-  return filename.replace(/\.[^/.]+$/, '');
+function readID3Tags(file: File): Promise<{ title?: string; artist?: string }> {
+  return new Promise((resolve, reject) => {
+    import('jsmediatags').then(({ default: jsmediatags }) => {
+      jsmediatags.read(file, {
+        onSuccess(tag: { tags: { title?: string; artist?: string } }) {
+          resolve({
+            title: tag.tags.title || undefined,
+            artist: tag.tags.artist || undefined,
+          });
+        },
+        onError(error: unknown) {
+          reject(error);
+        },
+      });
+    }).catch(reject);
+  });
+}
+
+function parseFilename(filename: string): SongMetadata {
+  const base = filename.replace(/\.[^/.]+$/, '');
+  const parts = base.split(' - ');
+  if (parts.length >= 2) {
+    return { title: parts[1].trim(), artist: parts[0].trim() };
+  }
+  return { title: base, artist: 'Unknown Artist' };
 }

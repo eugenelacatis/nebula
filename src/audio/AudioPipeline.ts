@@ -5,12 +5,16 @@ import { useAudioStore } from '@/store/audioStore';
 export class AudioPipeline {
   private context: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
+  private gainNode: GainNode | null = null;
   private source: MediaElementAudioSourceNode | null = null;
   private audioElement: HTMLAudioElement | null = null;
   private frequencyData: Uint8Array<ArrayBuffer> | null = null;
+  private waveformData: Uint8Array<ArrayBuffer> | null = null;
   private featureExtractor: FeatureExtractor;
   private rafId: number | null = null;
   private running = false;
+  private paused = false;
+  public onEnded: (() => void) | null = null;
 
   constructor() {
     this.featureExtractor = new FeatureExtractor();
@@ -22,21 +26,49 @@ export class AudioPipeline {
     this.analyser.fftSize = FFT_SIZE;
     this.analyser.smoothingTimeConstant = SMOOTHING_TIME_CONSTANT;
 
+    this.gainNode = this.context.createGain();
+    this.gainNode.gain.value = 1.0;
+
     this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
+    this.waveformData = new Uint8Array(this.analyser.frequencyBinCount);
 
     this.audioElement = new Audio();
     this.audioElement.crossOrigin = 'anonymous';
     this.audioElement.src = audioUrl;
+    this.audioElement.addEventListener('ended', () => {
+      this.onEnded?.();
+    });
 
     this.source = this.context.createMediaElementSource(this.audioElement);
-    this.source.connect(this.analyser);
+    this.source.connect(this.gainNode);
+    this.gainNode.connect(this.analyser);
     this.analyser.connect(this.context.destination);
 
-    console.log('[AudioPipeline] Initialized. FFT size:', FFT_SIZE);
-    console.log('[AudioPipeline] Frequency bin count:', this.analyser.frequencyBinCount);
-    console.log('[AudioPipeline] Sample rate:', this.context.sampleRate);
-
     return this.audioElement;
+  }
+
+  setVolume(value: number): void {
+    if (this.gainNode) this.gainNode.gain.value = Math.max(0, Math.min(1, value));
+  }
+
+  togglePause(): boolean {
+    if (!this.audioElement) return this.paused;
+    if (this.paused) {
+      this.audioElement.play();
+      this.paused = false;
+    } else {
+      this.audioElement.pause();
+      this.paused = true;
+    }
+    return this.paused;
+  }
+
+  get isPaused(): boolean { return this.paused; }
+
+  getWaveform(): Uint8Array | null {
+    if (!this.analyser || !this.waveformData) return null;
+    this.analyser.getByteTimeDomainData(this.waveformData);
+    return this.waveformData;
   }
 
   start(): void {
@@ -59,12 +91,12 @@ export class AudioPipeline {
       this.rafId = null;
     }
     this.audioElement?.pause();
-    console.log('[AudioPipeline] Stopped.');
   }
 
   dispose(): void {
     this.stop();
     this.source?.disconnect();
+    this.gainNode?.disconnect();
     this.analyser?.disconnect();
     this.context?.close();
     if (this.audioElement) {
@@ -72,10 +104,13 @@ export class AudioPipeline {
     }
     this.context = null;
     this.analyser = null;
+    this.gainNode = null;
     this.source = null;
     this.audioElement = null;
     this.frequencyData = null;
-    console.log('[AudioPipeline] Disposed.');
+    this.waveformData = null;
+    this.paused = false;
+    this.onEnded = null;
   }
 
   private poll = (): void => {
@@ -90,14 +125,6 @@ export class AudioPipeline {
     );
 
     useAudioStore.getState().setFeatures(features);
-
-    console.log(
-      '[AudioPipeline] bass:', features.bass.toFixed(2),
-      'mids:', features.mids.toFixed(2),
-      'highs:', features.highs.toFixed(2),
-      'energy:', features.energy.toFixed(2),
-      'beat:', features.beat
-    );
 
     this.rafId = requestAnimationFrame(this.poll);
   };

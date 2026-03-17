@@ -2,22 +2,25 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
+import { useSceneStore } from '@/store/sceneStore';
 import { AudioPipeline } from '@/audio/AudioPipeline';
+import { pipelineRef } from '@/audio/pipelineRef';
 import { extractMetadata } from '@/lib/metadata';
 import { transitionToConfig } from '@/lib/transitions';
-import { clampConfig } from '@/config/sceneConfig';
+import { clampConfig, DEFAULT_SCENE_CONFIG } from '@/config/sceneConfig';
+import { seedConfigFromSong } from '@/lib/colorSeed';
 import type { SceneSeedResponse } from '@/config/apiContract';
 
 const ACCEPTED_TYPES = ['audio/mpeg', 'audio/mp3'];
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-
-let audioPipeline: AudioPipeline | null = null;
 
 export default function Upload() {
   const phase = useAppStore((s) => s.phase);
   const setPhase = useAppStore((s) => s.setPhase);
   const setMetadata = useAppStore((s) => s.setMetadata);
   const setAudioUrl = useAppStore((s) => s.setAudioUrl);
+  const reset = useAppStore((s) => s.reset);
+  const setConfig = useSceneStore((s) => s.setConfig);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -33,28 +36,34 @@ export default function Upload() {
 
     setPhase('loading');
 
-    // Extract metadata
     const metadata = await extractMetadata(file);
     setMetadata(metadata);
-    console.log('[Upload] Metadata:', metadata.title, '-', metadata.artist);
 
-    // Create object URL for audio element
+    // Apply color seed immediately from song identity (overwritten by AI if it responds)
+    const seeded = clampConfig({ ...DEFAULT_SCENE_CONFIG, ...seedConfigFromSong(metadata.title, metadata.artist) });
+    setConfig(seeded);
+
     const url = URL.createObjectURL(file);
     setAudioUrl(url);
 
-    // Init audio pipeline
-    if (audioPipeline) {
-      audioPipeline.dispose();
+    if (pipelineRef.current) {
+      pipelineRef.current.dispose();
     }
-    audioPipeline = new AudioPipeline();
-    await audioPipeline.init(url);
-    audioPipeline.start();
+    pipelineRef.current = new AudioPipeline();
+    await pipelineRef.current.init(url);
 
-    // Fire scene seed request (non-blocking, 3s timeout)
+    pipelineRef.current.onEnded = () => {
+      pipelineRef.current?.dispose();
+      pipelineRef.current = null;
+      setConfig({ ...DEFAULT_SCENE_CONFIG });
+      reset();
+    };
+
+    pipelineRef.current.start();
+
     fetchSceneSeed(metadata.title, metadata.artist);
-
     setPhase('active');
-  }, [setPhase, setMetadata, setAudioUrl]);
+  }, [setPhase, setMetadata, setAudioUrl, reset, setConfig]);
 
   const fetchSceneSeed = async (title: string, artist: string) => {
     const controller = new AbortController();
@@ -72,10 +81,8 @@ export default function Upload() {
       const data: SceneSeedResponse = await res.json();
       const clamped = clampConfig(data.config);
       transitionToConfig(clamped);
-      console.log('[Upload] Scene seed applied. From AI:', data.fromAI);
-    } catch (err) {
-      clearTimeout(timeoutId);
-      console.warn('[Upload] Scene seed fetch failed or timed out, using defaults.', err);
+    } catch {
+      // Color seed already applied, no action needed
     }
   };
 
@@ -124,7 +131,8 @@ export default function Upload() {
           }
         `}
       >
-        <p className="text-white/70 text-lg font-light tracking-wide">
+        <div className="mb-4 text-white/20 text-4xl select-none">✦</div>
+        <p className="text-white/70 text-lg font-light tracking-wide animate-pulse-slow">
           Drop an MP3 to begin
         </p>
         <p className="text-white/30 text-sm mt-2">
