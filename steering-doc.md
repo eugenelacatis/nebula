@@ -77,18 +77,18 @@ USER DROPS MP3
 
 ## 3. Tech Stack Justification
 
-| Technology | Why This, Not Something Else |
-|---|---|
-| **Next.js (App Router)** | File-based routing, API routes for the Claude proxy, zero-config Vercel deployment. CRA is dead and Vite doesn't give us a backend. |
-| **Three.js** | Only mature WebGL library with a real ecosystem for post-processing, shaders, and BufferGeometry. Babylon is heavier and less suited to particle-heavy scenes. |
-| **Web Audio API** | AnalyserNode gives direct FFT access per frame with no library overhead. Tone.js and Howler.js add abstractions we don't need. |
-| **GSAP** | Battle-tested tweening with timeline sequencing. Manual lerp breaks down when coordinating 8+ properties simultaneously. |
-| **Claude API** | Structured JSON output from a prompt. Claude's system prompt control and JSON mode are cleaner than OpenAI function calling for this use case. |
-| **Zustand** | Lightweight state readable outside React's render cycle. Three.js reads via getState() in rAF. Redux is overkill, Context re-renders too much. |
-| **Tailwind CSS** | Utility classes for minimal UI chrome. No component library needed when 90% of the UI is canvas. |
-| **Vercel** | One-click deploy from GitHub, automatic preview deploys on PR, free tier. Native Next.js support. |
-| **GitHub Actions** | Lint + build on PR. Configured in 20 lines of YAML. |
-| **Sentry (optional)** | Client-side error capture with source maps. If Three.js crashes in production, we'll know why. |
+| Technology               | Why This, Not Something Else                                                                                                                                   |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Next.js (App Router)** | File-based routing, API routes for the Claude proxy, zero-config Vercel deployment. CRA is dead and Vite doesn't give us a backend.                            |
+| **Three.js**             | Only mature WebGL library with a real ecosystem for post-processing, shaders, and BufferGeometry. Babylon is heavier and less suited to particle-heavy scenes. |
+| **Web Audio API**        | AnalyserNode gives direct FFT access per frame with no library overhead. Tone.js and Howler.js add abstractions we don't need.                                 |
+| **GSAP**                 | Battle-tested tweening with timeline sequencing. Manual lerp breaks down when coordinating 8+ properties simultaneously.                                       |
+| **Claude API**           | Structured JSON output from a prompt. Claude's system prompt control and JSON mode are cleaner than OpenAI function calling for this use case.                 |
+| **Zustand**              | Lightweight state readable outside React's render cycle. Three.js reads via getState() in rAF. Redux is overkill, Context re-renders too much.                 |
+| **Tailwind CSS**         | Utility classes for minimal UI chrome. No component library needed when 90% of the UI is canvas.                                                               |
+| **Vercel**               | One-click deploy from GitHub, automatic preview deploys on PR, free tier. Native Next.js support.                                                              |
+| **GitHub Actions**       | Lint + build on PR. Configured in 20 lines of YAML.                                                                                                            |
+| **Sentry (optional)**    | Client-side error capture with source maps. If Three.js crashes in production, we'll know why.                                                                 |
 
 ---
 
@@ -119,12 +119,12 @@ All four team members review the scaffold. Each person presents their own ideas,
 
 After forking, each person owns a domain. They work against real interfaces, not guesses, because the scaffold already defines them.
 
-| Domain | Responsibilities | Owned Files | Key Risk |
-|---|---|---|---|
-| **Scene** | Star field (points + streak lines), nebula particles, camera rig (fly + bass shake), UnrealBloomPass, per-frame update reading audioFeatures and sceneConfig from store. | `src/three/`, `src/shaders/`, `components/Canvas.tsx` | Performance is the risk. Set a particle budget (target: 10k points, 60fps on 2020 MacBook). Profile by hour 36. |
-| **Audio** | AudioContext setup, AnalyserNode, frequency band splitting (bass/mids/highs), RMS energy, beat detection, smoothing layer. Write features to audioStore every frame. | `src/audio/`, `src/store/audioStore.ts` | Beat detection is hard. Start with energy threshold + 200ms time gate. If unreliable by hour 48, fall back to energy pulses. |
-| **API & Config** | Claude API integration in /api/scene-seed, scene config TypeScript types, 3s AbortController timeout, fallback defaults, GSAP transition timeline on seed arrival. | `src/app/api/`, `src/config/`, `src/store/sceneStore.ts`, `src/lib/transitions.ts` | API latency. The 3s timeout is a hard cutoff. If the seed arrives late, apply it anyway via transition. Never block the experience. |
-| **UI & Glue** | Upload component, HUD overlay (song title, artist), loading/phase states, ID3 extraction (jsmediatags), mobile/browser compatibility, Sentry if pursuing bonus. | `src/components/`, `src/app/page.tsx`, `src/lib/metadata.ts`, `src/store/appStore.ts` | Canvas mounting in Next.js App Router is the single blocking risk. The scaffold lead should have solved this, but verify it on your branch. |
+| Domain           | Responsibilities                                                                                                                                                         | Owned Files                                                                           | Key Risk                                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Scene**        | Star field (points + streak lines), nebula particles, camera rig (fly + bass shake), UnrealBloomPass, per-frame update reading audioFeatures and sceneConfig from store. | `src/three/`, `src/shaders/`, `components/Canvas.tsx`                                 | Performance is the risk. Set a particle budget (target: 10k points, 60fps on 2020 MacBook). Profile by hour 36.                             |
+| **Audio**        | AudioContext setup, AnalyserNode, frequency band splitting (bass/mids/highs), RMS energy, beat detection, smoothing layer. Write features to audioStore every frame.     | `src/audio/`, `src/store/audioStore.ts`                                               | Beat detection is hard. Start with energy threshold + 200ms time gate. If unreliable by hour 48, fall back to energy pulses.                |
+| **API & Config** | Claude API integration in /api/scene-seed, scene config TypeScript types, 3s AbortController timeout, fallback defaults, GSAP transition timeline on seed arrival.       | `src/app/api/`, `src/config/`, `src/store/sceneStore.ts`, `src/lib/transitions.ts`    | API latency. The 3s timeout is a hard cutoff. If the seed arrives late, apply it anyway via transition. Never block the experience.         |
+| **UI & Glue**    | Upload component, HUD overlay (song title, artist), loading/phase states, ID3 extraction (jsmediatags), mobile/browser compatibility, Sentry if pursuing bonus.          | `src/components/`, `src/app/page.tsx`, `src/lib/metadata.ts`, `src/store/appStore.ts` | Canvas mounting in Next.js App Router is the single blocking risk. The scaffold lead should have solved this, but verify it on your branch. |
 
 ### Phase 4: Polish & Freeze (Hours 60–68)
 
@@ -245,10 +245,12 @@ The Next.js API route sends this to the Anthropic Messages API:
   "model": "claude-sonnet-4-20250514",
   "max_tokens": 500,
   "system": "You generate scene configurations for an audio-reactive space visualization. Given a song title and artist, return a JSON object that captures the cultural and emotional identity of the song as visual parameters for a deep-space scene. Consider genre, mood, era, cultural context. Return ONLY valid JSON, no markdown, no explanation.",
-  "messages": [{
-    "role": "user",
-    "content": "Song: Bohemian Rhapsody | Artist: Queen"
-  }]
+  "messages": [
+    {
+      "role": "user",
+      "content": "Song: Bohemian Rhapsody | Artist: Queen"
+    }
+  ]
 }
 ```
 
@@ -256,19 +258,19 @@ The Next.js API route sends this to the Anthropic Messages API:
 
 Every field has a defined range. The renderer clamps out-of-range values.
 
-| Field | Type | Range | Description |
-|---|---|---|---|
-| `primaryColor` | string | `#RRGGBB` | Dominant nebula/ambient color. Core mood. |
-| `secondaryColor` | string | `#RRGGBB` | Accent for star highlights and bloom tint. |
-| `accentColor` | string | `#RRGGBB` | Beat flash and particle burst color. |
-| `warpSpeedBase` | number | 0.3–3.0 | Base camera speed before audio modulation. |
-| `starDensity` | number | 0.3–1.0 | Multiplier on star count (base 8000). |
-| `streakLengthMultiplier` | number | 0.5–2.0 | Multiplier on streak line length. |
-| `nebulaIntensity` | number | 0.0–1.0 | Opacity of nebula sprites. |
-| `bloomStrengthBase` | number | 0.3–1.5 | Base bloom before audio modulation. |
-| `cameraShakeIntensity` | number | 0.0–1.0 | How much bass impacts camera shake. |
-| `cosmicTension` | number | 0.0–1.0 | Maps to particle spread and color contrast. |
-| `mood` | string | enum | serene \| melancholic \| euphoric \| aggressive \| mysterious \| triumphant \| chaotic \| ethereal |
+| Field                    | Type   | Range     | Description                                                                                        |
+| ------------------------ | ------ | --------- | -------------------------------------------------------------------------------------------------- |
+| `primaryColor`           | string | `#RRGGBB` | Dominant nebula/ambient color. Core mood.                                                          |
+| `secondaryColor`         | string | `#RRGGBB` | Accent for star highlights and bloom tint.                                                         |
+| `accentColor`            | string | `#RRGGBB` | Beat flash and particle burst color.                                                               |
+| `warpSpeedBase`          | number | 0.3–3.0   | Base camera speed before audio modulation.                                                         |
+| `starDensity`            | number | 0.3–1.0   | Multiplier on star count (base 8000).                                                              |
+| `streakLengthMultiplier` | number | 0.5–2.0   | Multiplier on streak line length.                                                                  |
+| `nebulaIntensity`        | number | 0.0–1.0   | Opacity of nebula sprites.                                                                         |
+| `bloomStrengthBase`      | number | 0.3–1.5   | Base bloom before audio modulation.                                                                |
+| `cameraShakeIntensity`   | number | 0.0–1.0   | How much bass impacts camera shake.                                                                |
+| `cosmicTension`          | number | 0.0–1.0   | Maps to particle spread and color contrast.                                                        |
+| `mood`                   | string | enum      | serene \| melancholic \| euphoric \| aggressive \| mysterious \| triumphant \| chaotic \| ethereal |
 
 ### 7c. Fallback Default Config
 
@@ -296,36 +298,36 @@ Applied immediately on upload. Overwritten by seed if it arrives within 3 second
 
 ### State 1: Idle (Before Upload)
 
-| Property | Spec |
-|---|---|
-| **Colors** | Deep navy (#0a0a1a) background. Stars: cool white (#c8d0e0). No nebula. |
-| **Stars** | ~4000 (half density). Points only, no streaks. |
-| **Camera** | Slow forward drift at 0.3 units/frame. No shake. Slight Z-axis rotation (0.001 rad/frame). |
-| **Bloom** | Strength 0.4, radius 0.8, threshold 0.6. Subtle glow on bright stars only. |
-| **Feel** | Floating, not flying. Calm and hypnotic. This is the attract screen. |
-| **UI** | Upload zone centered. Semi-transparent dark bg, dashed border. "Drop an MP3 to begin." Subtle pulse animation. |
+| Property   | Spec                                                                                                           |
+| ---------- | -------------------------------------------------------------------------------------------------------------- |
+| **Colors** | Deep navy (#0a0a1a) background. Stars: cool white (#c8d0e0). No nebula.                                        |
+| **Stars**  | ~4000 (half density). Points only, no streaks.                                                                 |
+| **Camera** | Slow forward drift at 0.3 units/frame. No shake. Slight Z-axis rotation (0.001 rad/frame).                     |
+| **Bloom**  | Strength 0.4, radius 0.8, threshold 0.6. Subtle glow on bright stars only.                                     |
+| **Feel**   | Floating, not flying. Calm and hypnotic. This is the attract screen.                                           |
+| **UI**     | Upload zone centered. Semi-transparent dark bg, dashed border. "Drop an MP3 to begin." Subtle pulse animation. |
 
 ### State 2: Transition (Cosmos Awakening, 2–3s)
 
-| Property | Spec |
-|---|---|
-| **Trigger** | File drop accepted, audio decoding. |
-| **Visuals** | Star count ramps to target density over 2s. Streaks appear (length 0 → base). Nebula fades in. Colors shift from default to seed palette. |
-| **Camera** | Speed ramps from 0.3 to warpSpeedBase via GSAP power2.inOut. Z-rotation stops. |
-| **Audio reactivity** | Begins at 50% mapped intensity, lerps to 100% over 2s. Prevents the scene from exploding on first bass hit. |
-| **UI** | Upload zone fades out. HUD fades in (title, artist). |
+| Property             | Spec                                                                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Trigger**          | File drop accepted, audio decoding.                                                                                                       |
+| **Visuals**          | Star count ramps to target density over 2s. Streaks appear (length 0 → base). Nebula fades in. Colors shift from default to seed palette. |
+| **Camera**           | Speed ramps from 0.3 to warpSpeedBase via GSAP power2.inOut. Z-rotation stops.                                                            |
+| **Audio reactivity** | Begins at 50% mapped intensity, lerps to 100% over 2s. Prevents the scene from exploding on first bass hit.                               |
+| **UI**               | Upload zone fades out. HUD fades in (title, artist).                                                                                      |
 
 ### State 3: Active (Audio-Reactive)
 
-| Input / Element | Behavior |
-|---|---|
-| **Bass (20–250 Hz)** | Maps to warp speed (camera Z velocity) and camera shake. Heavy bass = faster flight + screen shake. |
-| **Mids (250–4k Hz)** | Maps to star opacity/brightness and nebula color saturation. Vocals make the scene brighter. |
-| **Highs (4k–16k Hz)** | Maps to star color temperature (blue-shift on bright highs) and small particle spawn rate. |
-| **Energy (RMS)** | Maps to bloom strength. Louder = more glow. |
-| **Beat events** | Flash (accentColor, 80% opacity, fades 200ms), streak length spikes 1.5x, camera micro-lurch forward. |
-| **Nebula** | Sprites drift, rotating on local axis. Color shifts between primary/secondary on slow sine (~8s) modulated by mids. |
-| **Bloom** | Base from config. Modulated +0 to +0.5 by energy. On beat: spike to base + 0.8, decay 300ms. |
+| Input / Element       | Behavior                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Bass (20–250 Hz)**  | Maps to warp speed (camera Z velocity) and camera shake. Heavy bass = faster flight + screen shake.                 |
+| **Mids (250–4k Hz)**  | Maps to star opacity/brightness and nebula color saturation. Vocals make the scene brighter.                        |
+| **Highs (4k–16k Hz)** | Maps to star color temperature (blue-shift on bright highs) and small particle spawn rate.                          |
+| **Energy (RMS)**      | Maps to bloom strength. Louder = more glow.                                                                         |
+| **Beat events**       | Flash (accentColor, 80% opacity, fades 200ms), streak length spikes 1.5x, camera micro-lurch forward.               |
+| **Nebula**            | Sprites drift, rotating on local axis. Color shifts between primary/secondary on slow sine (~8s) modulated by mids. |
+| **Bloom**             | Base from config. Modulated +0 to +0.5 by energy. On beat: spike to base + 0.8, decay 300ms.                        |
 
 ---
 
@@ -333,25 +335,25 @@ Applied immediately on upload. Overwritten by seed if it arrives within 3 second
 
 Each integration is load-bearing. During the presentation, explicitly name each technology and explain what it does in one sentence.
 
-| Technology | Integration | Presentation Line |
-|---|---|---|
-| **Three.js** | Entire rendering engine: BufferGeometry, LineSegments, ShaderMaterial, UnrealBloomPass. | "Real-time 3D rendering from scratch. Every star, streak, and glow is WebGL at 60fps." |
-| **Vercel** | Deployment with auto preview deploys per PR and prod deploy on merge. | "Every PR got a live preview URL. We tested each other's work before merging." |
-| **GitHub Actions** | CI: ESLint + TypeScript + Next.js build. Blocks merge on failure. | "Our CI pipeline runs lint, types, and a full build on every PR. We never merged broken code." |
-| **Claude API** | Scene seed from song metadata. Cultural/emotional identity → visual parameters. | "Claude analyzes the song's identity and generates a unique visual config. That's why each song's cosmos feels different." |
-| **Sentry** | Client-side error monitoring with source maps. Captures WebGL context loss. | "If the WebGL context crashes on a user's device, we get a stack trace. We can show the dashboard." |
+| Technology         | Integration                                                                             | Presentation Line                                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Three.js**       | Entire rendering engine: BufferGeometry, LineSegments, ShaderMaterial, UnrealBloomPass. | "Real-time 3D rendering from scratch. Every star, streak, and glow is WebGL at 60fps."                                     |
+| **Vercel**         | Deployment with auto preview deploys per PR and prod deploy on merge.                   | "Every PR got a live preview URL. We tested each other's work before merging."                                             |
+| **GitHub Actions** | CI: ESLint + TypeScript + Next.js build. Blocks merge on failure.                       | "Our CI pipeline runs lint, types, and a full build on every PR. We never merged broken code."                             |
+| **Claude API**     | Scene seed from song metadata. Cultural/emotional identity → visual parameters.         | "Claude analyzes the song's identity and generates a unique visual config. That's why each song's cosmos feels different." |
+| **Sentry**         | Client-side error monitoring with source maps. Captures WebGL context loss.             | "If the WebGL context crashes on a user's device, we get a stack trace. We can show the dashboard."                        |
 
 ---
 
 ## 10. Risk Register
 
-| # | Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|---|
-| 1 | Three.js < 30fps on demo hardware | Med | High | Set particle budget by hour 36. Profile with Chrome DevTools. Have a "low quality" flag that halves particles and disables nebula. Test on demo machine by hour 60. |
-| 2 | Claude API slow/down during demo | Low | Med | 3s timeout + fallback means demo works without API. Prepare two flows: one with AI (show transition), one without (show fallback). Either is impressive. |
-| 3 | Beat detection fires erratically | Med | Med | Calibrate with 3 test songs by hour 48. If unreliable, fall back to energy threshold pulses. Never demo a broken feature. |
-| 4 | Canvas fails to mount in Next.js App Router | Low | Critical | Scaffold lead tests dynamic import with ssr:false in the first 4 hours. If it fails, eject to a static HTML page. This is the only truly blocking risk. |
-| 5 | Team member falls behind or goes silent | Med | High | Standups every 8 hours (async in Discord). If stuck for 4+ hours, raise a flag. Roles are designed so any one can be descoped without killing the demo. |
+| #   | Risk                                        | Likelihood | Impact   | Mitigation                                                                                                                                                          |
+| --- | ------------------------------------------- | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Three.js < 30fps on demo hardware           | Med        | High     | Set particle budget by hour 36. Profile with Chrome DevTools. Have a "low quality" flag that halves particles and disables nebula. Test on demo machine by hour 60. |
+| 2   | Claude API slow/down during demo            | Low        | Med      | 3s timeout + fallback means demo works without API. Prepare two flows: one with AI (show transition), one without (show fallback). Either is impressive.            |
+| 3   | Beat detection fires erratically            | Med        | Med      | Calibrate with 3 test songs by hour 48. If unreliable, fall back to energy threshold pulses. Never demo a broken feature.                                           |
+| 4   | Canvas fails to mount in Next.js App Router | Low        | Critical | Scaffold lead tests dynamic import with ssr:false in the first 4 hours. If it fails, eject to a static HTML page. This is the only truly blocking risk.             |
+| 5   | Team member falls behind or goes silent     | Med        | High     | Standups every 8 hours (async in Discord). If stuck for 4+ hours, raise a flag. Roles are designed so any one can be descoped without killing the demo.             |
 
 ---
 
@@ -368,12 +370,12 @@ Each integration is load-bearing. During the presentation, explicitly name each 
 
 ### Script
 
-| Time | Beat | Script |
-|---|---|---|
-| 0:00–0:15 | HOOK | Idle cosmos on screen. "This is Nebula. Right now it's just drifting through space. Watch what happens when we give it music." |
-| 0:15–0:30 | THE DROP | Drag the dramatic MP3 onto the page. Don't talk. Let the cosmos awaken: stars multiply, streaks appear, colors shift, bloom intensifies. 15 seconds of pure experience. |
-| 0:30–1:30 | REACTIVITY | "Every visual is driven by real-time audio analysis. Bass drives speed and shake. Mids control brightness. Highs shift color. And on every beat—" (wait for a beat) "—that." Let it play for 30 more seconds. |
-| 1:30–2:15 | AI | "What makes this different from a random visualizer is the AI. When you drop a song, we send the title and artist to Claude, and it returns a scene config matched to the song's cultural identity." Pause. Drop the ambient track. "Watch the cosmos change." Let the transition happen. "Same engine, completely different cosmos. That's the AI." |
-| 2:15–3:00 | TECH | "Under the hood: Three.js for 3D at 60fps. Web Audio API for frequency analysis every frame. GSAP for smooth transitions. Next.js on Vercel with CI via GitHub Actions. Claude's API as a creative backend with a 3-second timeout and seamless fallback." |
-| 3:00–3:30 | DECISIONS | "We skipped react-three-fiber for raw Three.js — more control over the render loop. Zustand over Context because Three.js reads state outside React. The AI is a progressive enhancement: if Claude is down, you still fly through space." |
-| 3:30–4:00 | CLOSE | "Drop a song, fly through its universe." Leave the active cosmos running during Q&A. |
+| Time      | Beat       | Script                                                                                                                                                                                                                                                                                                                                               |
+| --------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0:00–0:15 | HOOK       | Idle cosmos on screen. "This is Nebula. Right now it's just drifting through space. Watch what happens when we give it music."                                                                                                                                                                                                                       |
+| 0:15–0:30 | THE DROP   | Drag the dramatic MP3 onto the page. Don't talk. Let the cosmos awaken: stars multiply, streaks appear, colors shift, bloom intensifies. 15 seconds of pure experience.                                                                                                                                                                              |
+| 0:30–1:30 | REACTIVITY | "Every visual is driven by real-time audio analysis. Bass drives speed and shake. Mids control brightness. Highs shift color. And on every beat—" (wait for a beat) "—that." Let it play for 30 more seconds.                                                                                                                                        |
+| 1:30–2:15 | AI         | "What makes this different from a random visualizer is the AI. When you drop a song, we send the title and artist to Claude, and it returns a scene config matched to the song's cultural identity." Pause. Drop the ambient track. "Watch the cosmos change." Let the transition happen. "Same engine, completely different cosmos. That's the AI." |
+| 2:15–3:00 | TECH       | "Under the hood: Three.js for 3D at 60fps. Web Audio API for frequency analysis every frame. GSAP for smooth transitions. Next.js on Vercel with CI via GitHub Actions. Claude's API as a creative backend with a 3-second timeout and seamless fallback."                                                                                           |
+| 3:00–3:30 | DECISIONS  | "We skipped react-three-fiber for raw Three.js — more control over the render loop. Zustand over Context because Three.js reads state outside React. The AI is a progressive enhancement: if Claude is down, you still fly through space."                                                                                                           |
+| 3:30–4:00 | CLOSE      | "Drop a song, fly through its universe." Leave the active cosmos running during Q&A.                                                                                                                                                                                                                                                                 |
