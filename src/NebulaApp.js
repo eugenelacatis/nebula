@@ -4,9 +4,11 @@ import { RenderPass }      from 'three/examples/jsm/postprocessing/RenderPass.js
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass }      from 'three/examples/jsm/postprocessing/OutputPass.js';
 
-import { AudioEngine }   from './AudioEngine.js';
-import { SynthEngine }   from './SynthEngine.js';
+import { AudioEngine }    from './AudioEngine.js';
+import { SynthEngine }    from './SynthEngine.js';
 import { ParticleSystem } from './ParticleSystem.js';
+import { NebulaSkybox }   from './NebulaSkybox.js';
+import { fetchSkyboxParams, presetMetadata } from './claudeService.js';
 
 // ─── NebulaApp ────────────────────────────────────────────────────────────────
 // Three.js + audio engine. No DOM manipulation except VU bar widths.
@@ -29,6 +31,7 @@ export class NebulaApp {
     this._raf       = null;
 
     this._initThree(canvas);
+    this.skybox = new NebulaSkybox(this.scene);
     this._animate();
   }
 
@@ -42,7 +45,8 @@ export class NebulaApp {
     this.renderer.toneMappingExposure = 1.0;
 
     this.scene  = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x010108);
+    // Background is handled entirely by NebulaSkybox's sphere shader
+    this.scene.background = null;
 
     this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 500);
     this.camera.position.set(0, 6, 22);
@@ -86,6 +90,7 @@ export class NebulaApp {
   selectPreset(id) {
     this.useUploadedFile = false;
     this.activePreset    = id;
+    this._updateSkybox(presetMetadata(id));
     if (this.isPlaying) this._startPlayback();
   }
 
@@ -101,6 +106,7 @@ export class NebulaApp {
 
       if (!this.activePreset && !this.useUploadedFile) {
         this.activePreset = 'cosmic-pulse';
+        this._updateSkybox(presetMetadata('cosmic-pulse'));
       }
 
       this._startPlayback();
@@ -136,6 +142,7 @@ export class NebulaApp {
     this.useUploadedFile = true;
     this.activePreset    = null;
     this.isPlaying       = true;
+    this._updateSkybox({ name: file.name, source: 'user uploaded audio file' });
   }
 
   dispose() {
@@ -143,6 +150,7 @@ export class NebulaApp {
     cancelAnimationFrame(this._raf);
     window.removeEventListener('resize',    this._onResize);
     window.removeEventListener('mousemove', this._onMouseMove);
+    this.skybox?.dispose();
     this.renderer?.dispose();
   }
 
@@ -167,6 +175,12 @@ export class NebulaApp {
     this.ps = new ParticleSystem(this.scene, count);
   }
 
+  // Fire-and-forget: asks Claude for skybox params then smoothly transitions
+  async _updateSkybox(metadata) {
+    const params = await fetchSkyboxParams(metadata);
+    if (params) this.skybox.setParams(params);
+  }
+
   // ─── Render loop ─────────────────────────────────────────────────────────────
 
   _animate() {
@@ -187,6 +201,7 @@ export class NebulaApp {
 
     if (this.ps) this.ps.update(dt, this.audio);
 
+    this.skybox.update(dt);
     this.composer.render();
 
     this._updateVU();
