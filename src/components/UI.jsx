@@ -1,0 +1,124 @@
+import React, { useRef } from 'react';
+
+const PRESETS = [
+  { id: 'cosmic-pulse', label: 'Cosmic Pulse', genre: 'Techno / 128 BPM', icon: '⚡', color: '#ff00ff' },
+  { id: 'nebula-drift', label: 'Nebula Drift', genre: 'Ambient',            icon: '🌌', color: '#00d4ff' },
+  { id: 'solar-winds',  label: 'Solar Winds',  genre: 'Drum & Bass / 170 BPM', icon: '🌪', color: '#ff6600' },
+];
+
+export default function UI({
+  isPlaying, activePreset, volume, bloom, particleCount, uploadLabel,
+  onPresetSelect, onTogglePlay, onVolumeChange, onBloomChange,
+  onParticleToggle, onFileUpload,
+}) {
+  const fileInputRef = useRef(null);
+
+  return (
+    <aside id="ui">
+      <h1>✦ Music Particles</h1>
+
+      {/* Preset tracks */}
+      <section>
+        <p className="section-title">Preset Tracks</p>
+        <div id="preset-grid">
+          {PRESETS.map(p => (
+            <div
+              key={p.id}
+              className={`preset-card${activePreset === p.id ? ' active' : ''}`}
+              style={{ '--accent': p.color }}
+              onClick={() => onPresetSelect(p.id)}
+            >
+              <span className="card-icon">{p.icon}</span>
+              <span className="card-label">{p.label}</span>
+              <span className="card-genre">{p.genre}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Upload */}
+      <section className="upload-row">
+        <p className="section-title">Your Music</p>
+        <button id="btn-upload" onClick={() => fileInputRef.current?.click()}>
+          ⬆  Upload audio file
+        </button>
+        <span id="upload-label">{uploadLabel}</span>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="audio/*"
+          style={{ display: 'none' }}
+          onChange={e => { const f = e.target.files[0]; if (f) onFileUpload(f); }}
+        />
+      </section>
+
+      {/* Playback */}
+      <section>
+        <p className="section-title">Playback</p>
+        <div className="controls-row">
+          <button
+            id="btn-play"
+            className={isPlaying ? 'playing' : ''}
+            onClick={onTogglePlay}
+          >
+            {isPlaying ? '⏸  Pause' : '▶  Play'}
+          </button>
+        </div>
+      </section>
+
+      {/* Volume */}
+      <section className="slider-row">
+        <div className="slider-label-row"><span>Volume</span></div>
+        <input
+          type="range"
+          id="vol-slider"
+          min="0" max="100"
+          value={volume}
+          onChange={e => onVolumeChange(Number(e.target.value))}
+        />
+      </section>
+
+      {/* Bloom */}
+      <section className="slider-row">
+        <div className="slider-label-row"><span>Bloom</span></div>
+        <input
+          type="range"
+          id="bloom-slider"
+          min="5" max="100"
+          value={bloom}
+          onChange={e => onBloomChange(Number(e.target.value))}
+        />
+      </section>
+
+      {/* VU meter — widths updated directly by NebulaApp's animation loop */}
+      <section className="vu-meter">
+        <p className="section-title">Frequencies</p>
+        <div className="vu-row">
+          <span>Bass</span>
+          <div className="vu-track"><div className="vu-bar" id="vu-bass" /></div>
+        </div>
+        <div className="vu-row">
+          <span>Mid</span>
+          <div className="vu-track"><div className="vu-bar" id="vu-mid" /></div>
+        </div>
+        <div className="vu-row">
+          <span>High</span>
+          <div className="vu-track"><div className="vu-bar" id="vu-high" /></div>
+        </div>
+      </section>
+
+      {/* Particle count */}
+      <section>
+        <p className="section-title">Settings</p>
+        <button id="btn-particles" onClick={onParticleToggle}>
+          Particles: {particleCount / 1000}k
+        </button>
+      </section>
+
+      <p className="tip">
+        Click <strong>Play</strong> to start a preset, or upload your own audio.
+        Move the mouse to rotate the camera.
+      </p>
+    </aside>
+  );
+}
