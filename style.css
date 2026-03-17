@@ -1,0 +1,263 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #010108;
+  --surface:  rgba(10, 10, 28, 0.82);
+  --border:   rgba(100, 100, 220, 0.2);
+  --accent:   #8855ff;
+  --text:     #dde;
+  --text2:    #778;
+  --radius:   12px;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: var(--text);
+}
+
+#canvas {
+  position: fixed;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── Panel ────────────────────────────────────────────────────────────── */
+
+#ui {
+  position: fixed;
+  top: 0; left: 0;
+  width: 300px;
+  height: 100vh;
+  padding: 20px 16px;
+  background: var(--surface);
+  backdrop-filter: blur(18px);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  z-index: 10;
+}
+
+#ui h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 12px var(--accent);
+}
+
+/* ── Section headings ─────────────────────────────────────────────────── */
+
+.section-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+
+/* ── Preset cards ─────────────────────────────────────────────────────── */
+
+#preset-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preset-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.preset-card:hover {
+  border-color: var(--accent);
+  background: rgba(136,85,255,0.08);
+}
+
+.preset-card.active {
+  border-color: var(--accent, #8855ff);
+  background: rgba(136,85,255,0.15);
+  box-shadow: 0 0 16px rgba(136,85,255,0.3);
+}
+
+/* use CSS var set inline per card */
+.preset-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.card-icon   { font-size: 1.4rem; }
+.card-label  { font-size: 0.88rem; font-weight: 600; flex: 1; }
+.card-genre  { font-size: 0.68rem; color: var(--text2); white-space: nowrap; }
+
+/* ── Upload ───────────────────────────────────────────────────────────── */
+
+.upload-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#btn-upload {
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  border: 1px dashed rgba(100,200,255,0.4);
+  background: transparent;
+  color: rgba(100,200,255,0.8);
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: border-color 0.2s, color 0.2s;
+}
+#btn-upload:hover {
+  border-color: rgba(100,200,255,0.9);
+  color: #fff;
+}
+
+#upload-label {
+  font-size: 0.72rem;
+  color: var(--text2);
+  min-height: 1em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Controls ─────────────────────────────────────────────────────────── */
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#btn-play {
+  flex: 1;
+  padding: 10px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(136,85,255,0.6);
+  background: rgba(136,85,255,0.12);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+#btn-play:hover  { background: rgba(136,85,255,0.25); }
+#btn-play.playing {
+  background: rgba(136,85,255,0.3);
+  box-shadow: 0 0 14px rgba(136,85,255,0.45);
+}
+
+/* ── Sliders ──────────────────────────────────────────────────────────── */
+
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slider-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text2);
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.1);
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  cursor: pointer;
+}
+
+/* ── VU meter ─────────────────────────────────────────────────────────── */
+
+.vu-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.vu-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.68rem;
+  color: var(--text2);
+}
+
+.vu-row span { width: 32px; }
+
+.vu-track {
+  flex: 1;
+  height: 5px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.vu-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 4px;
+  transition: width 0.05s ease-out;
+}
+
+#vu-bass { background: linear-gradient(90deg, #ff0066, #ff44aa); }
+#vu-mid  { background: linear-gradient(90deg, #00ccff, #00ff99); }
+#vu-high { background: linear-gradient(90deg, #ffcc00, #ffffff); }
+
+/* ── Misc buttons ─────────────────────────────────────────────────────── */
+
+#btn-particles {
+  padding: 7px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+#btn-particles:hover { color: var(--text); border-color: rgba(150,150,255,0.5); }
+
+/* ── Tip ──────────────────────────────────────────────────────────────── */
+
+.tip {
+  font-size: 0.68rem;
+  color: var(--text2);
+  line-height: 1.4;
+  margin-top: auto;
+  opacity: 0.65;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────── */
+
+#ui::-webkit-scrollbar       { width: 4px; }
+#ui::-webkit-scrollbar-thumb { background: rgba(136,85,255,0.4); border-radius: 4px; }

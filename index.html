@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music Particle System</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three":              "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/":      "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<!-- ── Side panel ──────────────────────────────────────────────────────── -->
+<aside id="ui">
+
+  <h1>✦ Music Particles</h1>
+
+  <!-- Preset tracks -->
+  <section>
+    <p class="section-title">Preset Tracks</p>
+    <div id="preset-grid"></div>
+  </section>
+
+  <!-- Upload -->
+  <section class="upload-row">
+    <p class="section-title">Your Music</p>
+    <button id="btn-upload">⬆  Upload audio file</button>
+    <span id="upload-label">Upload your music</span>
+    <input type="file" id="file-input" accept="audio/*" style="display:none" />
+  </section>
+
+  <!-- Playback -->
+  <section>
+    <p class="section-title">Playback</p>
+    <div class="controls-row">
+      <button id="btn-play">▶  Play</button>
+    </div>
+  </section>
+
+  <!-- Volume -->
+  <section class="slider-row">
+    <div class="slider-label-row">
+      <span>Volume</span>
+    </div>
+    <input type="range" id="vol-slider" min="0" max="100" value="80" />
+  </section>
+
+  <!-- Bloom -->
+  <section class="slider-row">
+    <div class="slider-label-row">
+      <span>Bloom</span>
+    </div>
+    <input type="range" id="bloom-slider" min="5" max="100" value="46" />
+  </section>
+
+  <!-- VU meter -->
+  <section class="vu-meter">
+    <p class="section-title">Frequencies</p>
+    <div class="vu-row">
+      <span>Bass</span>
+      <div class="vu-track"><div class="vu-bar" id="vu-bass"></div></div>
+    </div>
+    <div class="vu-row">
+      <span>Mid</span>
+      <div class="vu-track"><div class="vu-bar" id="vu-mid"></div></div>
+    </div>
+    <div class="vu-row">
+      <span>High</span>
+      <div class="vu-track"><div class="vu-bar" id="vu-high"></div></div>
+    </div>
+  </section>
+
+  <!-- Particles toggle -->
+  <section>
+    <p class="section-title">Settings</p>
+    <button id="btn-particles">Particles: 18k</button>
+  </section>
+
+  <p class="tip">
+    Click <strong>Play</strong> to start a preset, or upload your own audio.
+    Move the mouse to rotate the camera.
+  </p>
+
+</aside>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
