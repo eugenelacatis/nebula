@@ -201,7 +201,7 @@ export class NebulaSkybox {
     if (params.wispiness      !== undefined) s.wispiness      = params.wispiness;
     if (params.starDensity    !== undefined) s.starDensity    = params.starDensity;
     if (params.starBrightness !== undefined) s.starBrightness = params.starBrightness;
-    if (params.energy         !== undefined) s.energy         = params.energy;
+    if (params.energy         !== undefined) s.energy         = Math.min(params.energy, 0.85);
     if (params.colorBias      !== undefined) s.colorBias      = params.colorBias;
   }
 

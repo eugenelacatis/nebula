@@ -56,7 +56,7 @@ export class NebulaApp {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.55, 0.25, 0.6
+      0.55, 0.25, 0.85   // threshold 0.85: only the very brightest particle cores bloom
     );
     this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());
@@ -197,7 +197,7 @@ export class NebulaApp {
     this.camera.position.y = 6 + Math.sin(t * 0.04) * 2 - this._mouse.y * 1.5;
     this.camera.lookAt(0, 0, 0);
 
-    this.bloomPass.strength = 0.55 + this.audio.bass * 0.35;
+    this.bloomPass.strength = 0.28 + this.audio.bass * 0.14;
 
     if (this.ps) this.ps.update(dt, this.audio);
 

@@ -43,7 +43,7 @@ Return ONLY a valid JSON object — absolutely no markdown, no code fences, no e
   "wispiness":       <0.0–1.0>,
   "starDensity":     <0.0–1.0>,
   "starBrightness":  <0.3–1.5>,
-  "energy":          <0.5–2.0>,
+  "energy":          <0.3–0.85>,
   "animSpeed":       <0.05–2.0>,
   "colorBias":       <0.0–1.0>
 }
@@ -56,7 +56,7 @@ Parameter guide — use the full range boldly:
 - wispiness: 0.0 = razor-sharp dramatic cloud edges with harsh contrast, 1.0 = soft diffuse organic mist
 - starDensity: 0.0 = empty void, 1.0 = densely packed starfield
 - starBrightness: star point intensity (0.3 = barely visible, 1.5 = brilliant blazing)
-- energy: overall luminosity (0.5 = dark moody underworld, 2.0 = supernova blinding brightness)
+- energy: overall luminosity (0.3 = dark moody underworld, 0.85 = vivid bright)
 - animSpeed: nebula drift (0.05 = geological stillness, 2.0 = fast turbulent churning)
 - colorBias: 0.0 = primaryColor dominates, 1.0 = secondaryColor dominates
 
@@ -65,7 +65,7 @@ Mandatory style targets — each must look nothing like the others:
 TECHNO / HIGH BPM (≥120 bpm):
   Tight swirling clouds (cloudScale 4.5–6.0), razor edges (wispiness 0.0–0.15),
   electric neon colors (hot magenta + electric cyan + white), dense stars,
-  blazing energy (1.6–2.0), fast animation (1.3–2.0)
+  vivid energy (0.75–0.85), fast animation (1.3–2.0)
 
 AMBIENT / CHILL:
   Vast misty formations (cloudScale 1.0–1.8), extremely wispy (0.75–1.0),
@@ -75,7 +75,7 @@ AMBIENT / CHILL:
 DRUM & BASS / VERY HIGH BPM (≥160 bpm):
   Streaky turbulent clouds (cloudScale 3.5–5.5), semi-sharp (wispiness 0.1–0.3),
   explosive warm colors (volcanic orange + deep crimson + solar gold),
-  dense bright stars, extreme energy (1.8–2.0), fast swirling animation (1.6–2.0)
+  dense bright stars, vivid energy (0.78–0.85), fast swirling animation (1.6–2.0)
 
 JAZZ / BLUES:
   Organic flowing clouds (cloudScale 2.0–3.5), medium wispiness (0.35–0.6),
