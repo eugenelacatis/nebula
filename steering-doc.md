@@ -8,7 +8,7 @@ Technical Steering Document · 72-Hour Build · 4-Person Team · Spring 2026 · 
 
 ## 1. Project Vision
 
-Nebula turns any MP3 into a personalized journey through deep space. Drop a song, and a real-time audio analysis pipeline extracts bass, mids, highs, BPM, and spectral energy while a background call to Claude reads the song's metadata and generates a scene seed — colors, warp speed, star density, cosmic tension — that shapes the cosmos to match the music's cultural identity. The result is a Three.js warp tunnel where stars streak, nebulae pulse, and bloom flares in sync with every beat.
+Nebula turns any MP3 into a personalized journey through deep space. Drop a song, and a real-time audio analysis pipeline extracts bass, mids, highs, BPM, and spectral energy while a background call to Claude reads the song's metadata and generates a scene seed — colors, warp speed, star density, cosmic tension — that shapes the cosmos to match the music's cultural identity. The result is a Three.js warp tunnel where stars streak, nebulae pulse, and bloom flares in sync with every beat. An audio waveform is shown, reacting to each beat of the song.
 
 If the AI call fails, the cosmos loads anyway with a calm default palette. The AI is a progressive enhancement, not a gate.
 
