@@ -292,40 +292,25 @@ Applied immediately on upload. Overwritten by seed if it arrives within 3 second
 
 ---
 
-## 8. Visual Design Spec
+## 8. Visual Direction
 
-### State 1: Idle (Before Upload)
+Nebula should feel like movement through a living cosmic environment shaped by music, not just a flight through a fixed warp tunnel. The core experience is still forward travel through space, but the world should behave like responsive matter: luminous particle fields, drifting atmospheres, dense clusters, voids, and flowing structures that reorganize themselves around the song.
 
-| Property | Spec |
-|---|---|
-| **Colors** | Deep navy (#0a0a1a) background. Stars: cool white (#c8d0e0). No nebula. |
-| **Stars** | ~4000 (half density). Points only, no streaks. |
-| **Camera** | Slow forward drift at 0.3 units/frame. No shake. Slight Z-axis rotation (0.001 rad/frame). |
-| **Bloom** | Strength 0.4, radius 0.8, threshold 0.6. Subtle glow on bright stars only. |
-| **Feel** | Floating, not flying. Calm and hypnotic. This is the attract screen. |
-| **UI** | Upload zone centered. Semi-transparent dark bg, dashed border. "Drop an MP3 to begin." Subtle pulse animation. |
+The visual identity should prioritize atmosphere, depth, glow, and restraint over literal sci-fi tropes. Instead of relying primarily on constant streaks, vanishing-point warp lines, and aggressive camera motion, the scene should emphasize volumetric particle behavior and the sense that the listener is passing through a dynamic phenomenon. Travel remains central, but the environment should feel discovered and transformed by the music, not predefined.
 
-### State 2: Transition (Cosmos Awakening, 2–3s)
+Music should affect more than speed and brightness. Audio should reshape the character of the environment itself: density, cohesion, turbulence, spatial tension, color drift, and structural flow. Bass can compress or expand the field, mids can bend or organize particle motion, highs can excite shimmer and fragmentation, and beats can trigger larger spatial events such as ripples, openings, bursts, or temporary alignments. The result should feel like the song is continuously re-sculpting the universe around the viewer.
 
-| Property | Spec |
-|---|---|
-| **Trigger** | File drop accepted, audio decoding. |
-| **Visuals** | Star count ramps to target density over 2s. Streaks appear (length 0 → base). Nebula fades in. Colors shift from default to seed palette. |
-| **Camera** | Speed ramps from 0.3 to warpSpeedBase via GSAP power2.inOut. Z-rotation stops. |
-| **Audio reactivity** | Begins at 50% mapped intensity, lerps to 100% over 2s. Prevents the scene from exploding on first bass hit. |
-| **UI** | Upload zone fades out. HUD fades in (title, artist). |
+Visually, the target is luminous, hypnotic, and elegant. The experience should feel cosmic, but not generic; expressive, but not chaotic; reactive, but not noisy. Streaks, flashes, and dramatic speed cues should be treated as accents, not the default identity. At its best, Nebula should feel less like a screensaver or a spaceship ride and more like traveling through music as living light.
 
-### State 3: Active (Audio-Reactive)
+### 8a. Visual Systems Implementation Brief
 
-| Input / Element | Behavior |
-|---|---|
-| **Bass (20–250 Hz)** | Maps to warp speed (camera Z velocity) and camera shake. Heavy bass = faster flight + screen shake. |
-| **Mids (250–4k Hz)** | Maps to star opacity/brightness and nebula color saturation. Vocals make the scene brighter. |
-| **Highs (4k–16k Hz)** | Maps to star color temperature (blue-shift on bright highs) and small particle spawn rate. |
-| **Energy (RMS)** | Maps to bloom strength. Louder = more glow. |
-| **Beat events** | Flash (accentColor, 80% opacity, fades 200ms), streak length spikes 1.5x, camera micro-lurch forward. |
-| **Nebula** | Sprites drift, rotating on local axis. Color shifts between primary/secondary on slow sine (~8s) modulated by mids. |
-| **Bloom** | Base from config. Modulated +0 to +0.5 by energy. On beat: spike to base + 0.8, decay 300ms. |
+The renderer should implement three linked visual mechanics: particle field morphology, flow field traversal, and structural events. Particle field morphology gives the environment shape by allowing the main particle system to form dense clusters, layered bands, and void pockets rather than behaving like a uniform star tunnel. Flow field traversal preserves forward movement through space while bending particles through drifting currents, arcs, and soft directional pressure. Structural events turn beats into short-lived spatial changes such as pulses, openings, collapses, or temporary alignments instead of only bloom spikes and camera lurches.
+
+`StarField` is the primary system for these mechanics. It should own particle density, local clustering, flow motion, and selective streaking. `Nebula` should reinforce atmosphere and regional glow rather than carrying the whole visual identity. `CameraRig` should preserve traversal through space while shifting from aggressive shake toward subtle acceleration, orientation drift, and occasional emphasis during major events. `SceneManager` should coordinate beat-driven event lifecycles and distribute temporary modifiers across the scene.
+
+Audio mapping should favor environmental change over simple intensity scaling. Bass should compress or expand the field and strengthen directional pull. Mids should increase cohesion and reshape the flow. Highs should add shimmer, fragmentation, and fine turbulence. Beat events should trigger brief structural transformations that read as changes in the world itself. Bloom and streaking should remain present, but mostly as accents layered on top of these deeper spatial responses.
+
+The implementation order should be: first, refactor the main particle field so it can cluster, diffuse, and create voids while preserving forward travel; second, add procedural flow behavior so particles move through arcs and currents instead of only linear warp motion; third, add a small event system that triggers pulses, openings, and collapses on beats. This order prioritizes a stronger baseline identity before adding spectacle.
 
 ---
 

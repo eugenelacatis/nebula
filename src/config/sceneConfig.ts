@@ -40,10 +40,10 @@ export function clampConfig(config: SceneConfig): SceneConfig {
   return {
     ...config,
     warpSpeedBase: clamp(config.warpSpeedBase, 0.3, 3.0),
-    starDensity: clamp(config.starDensity, 0.3, 1.0),
-    streakLengthMultiplier: clamp(config.streakLengthMultiplier, 0.5, 2.0),
+    starDensity: clamp(config.starDensity, 0.1, 1.0),
+    streakLengthMultiplier: clamp(config.streakLengthMultiplier, 0.2, 2.0),
     nebulaIntensity: clamp(config.nebulaIntensity, 0.0, 1.0),
-    bloomStrengthBase: clamp(config.bloomStrengthBase, 0.3, 1.5),
+    bloomStrengthBase: clamp(config.bloomStrengthBase, 0.0, 1.5),
     cameraShakeIntensity: clamp(config.cameraShakeIntensity, 0.0, 1.0),
     cosmicTension: clamp(config.cosmicTension, 0.0, 1.0),
   };

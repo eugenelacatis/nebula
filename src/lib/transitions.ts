@@ -3,10 +3,27 @@ import { useSceneStore } from '@/store/sceneStore';
 import { useAppStore } from '@/store/appStore';
 import type { SceneConfig } from '@/config/sceneConfig';
 
+interface TransitionOptions {
+  preserveTunedValues?: boolean;
+}
+
 // GSAP timeline for the "cosmos awakening" transition
 // Lerps from current config to new config over ~2.5s
-export function transitionToConfig(newConfig: SceneConfig): void {
+export function transitionToConfig(
+  newConfig: SceneConfig,
+  options: TransitionOptions = {}
+): void {
   const currentConfig = useSceneStore.getState().config;
+  const preserveTunedValues = options.preserveTunedValues ?? false;
+  const targetConfig = preserveTunedValues
+    ? {
+        ...currentConfig,
+        primaryColor: newConfig.primaryColor,
+        secondaryColor: newConfig.secondaryColor,
+        accentColor: newConfig.accentColor,
+        mood: newConfig.mood,
+      }
+    : newConfig;
 
   // Create a proxy object that GSAP will tween
   const proxy = { ...currentConfig };
@@ -14,13 +31,13 @@ export function transitionToConfig(newConfig: SceneConfig): void {
   gsap.to(proxy, {
     duration: 2.5,
     ease: 'power2.inOut',
-    warpSpeedBase: newConfig.warpSpeedBase,
-    starDensity: newConfig.starDensity,
-    streakLengthMultiplier: newConfig.streakLengthMultiplier,
-    nebulaIntensity: newConfig.nebulaIntensity,
-    bloomStrengthBase: newConfig.bloomStrengthBase,
-    cameraShakeIntensity: newConfig.cameraShakeIntensity,
-    cosmicTension: newConfig.cosmicTension,
+    warpSpeedBase: targetConfig.warpSpeedBase,
+    starDensity: targetConfig.starDensity,
+    streakLengthMultiplier: targetConfig.streakLengthMultiplier,
+    nebulaIntensity: targetConfig.nebulaIntensity,
+    bloomStrengthBase: targetConfig.bloomStrengthBase,
+    cameraShakeIntensity: targetConfig.cameraShakeIntensity,
+    cosmicTension: targetConfig.cosmicTension,
     onUpdate: () => {
       useSceneStore.getState().patchConfig({
         warpSpeedBase: proxy.warpSpeedBase,
@@ -34,21 +51,21 @@ export function transitionToConfig(newConfig: SceneConfig): void {
     },
     onComplete: () => {
       // Apply colors and mood at the end (not lerp-able)
-      useSceneStore.getState().setConfig(newConfig);
+      useSceneStore.getState().setConfig(targetConfig);
       console.log('[transitions] Cosmos awakening complete.');
     },
   });
 
   // Transition colors immediately (they shift visually)
   useSceneStore.getState().patchConfig({
-    primaryColor: newConfig.primaryColor,
-    secondaryColor: newConfig.secondaryColor,
-    accentColor: newConfig.accentColor,
-    mood: newConfig.mood,
+    primaryColor: targetConfig.primaryColor,
+    secondaryColor: targetConfig.secondaryColor,
+    accentColor: targetConfig.accentColor,
+    mood: targetConfig.mood,
   });
 
   // Set app phase to active
   useAppStore.getState().setPhase('active');
 
-  console.log('[transitions] Cosmos awakening started. Mood:', newConfig.mood);
+  console.log('[transitions] Cosmos awakening started. Mood:', targetConfig.mood);
 }

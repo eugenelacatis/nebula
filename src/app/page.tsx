@@ -1,4 +1,5 @@
 import Canvas from '@/components/Canvas';
+import DebugPanel from '@/components/DebugPanel';
 import Upload from '@/components/Upload';
 import HUD from '@/components/HUD';
 
@@ -8,6 +9,7 @@ export default function Home() {
       <Canvas />
       <Upload />
       <HUD />
+      <DebugPanel />
     </main>
   );
 }

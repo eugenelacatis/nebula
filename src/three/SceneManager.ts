@@ -18,6 +18,7 @@ export class SceneManager {
   private rafId: number | null = null;
   private container: HTMLElement;
   private beatBloom = 0;
+  private starDensity = 0.32;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -30,7 +31,7 @@ export class SceneManager {
     });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.setClearColor(0x0a0a1a);
+    this.renderer.setClearColor(0x000000);
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
@@ -38,7 +39,7 @@ export class SceneManager {
     this.cameraRig = new CameraRig(width / height);
     this.scene.add(this.cameraRig.camera);
 
-    this.starField = new StarField(0.5);
+    this.starField = new StarField(this.starDensity);
     this.scene.add(this.starField.points);
     this.scene.add(this.starField.streaks);
 
@@ -71,53 +72,68 @@ export class SceneManager {
     const { config } = useSceneStore.getState();
     const { phase } = useAppStore.getState();
 
+    if (Math.abs(config.starDensity - this.starDensity) > 0.001) {
+      this.rebuildStarField(config.starDensity);
+    }
+
     const isIdle = phase === 'idle';
     const isPaused = pipelineRef.current?.isPaused ?? false;
     if (isPaused) {
       this.postProcessing.render();
       return;
     }
-    const warpSpeed = isIdle ? 0.3 : config.warpSpeedBase + features.bass * 4.0;
-    const streakMultiplier = isIdle ? 0 : config.streakLengthMultiplier;
-    const showStreaks = !isIdle;
+
+    const activityLevel = Math.max(features.bass, features.mids, features.highs, features.energy);
+    const isLowActivity = !isIdle && activityLevel < 0.08 && !features.beat;
+    const visualIdle = isIdle || isLowActivity;
+    const calmMix = isLowActivity ? activityLevel / 0.08 : 1;
+
+    const warpSpeed = visualIdle
+      ? 0.28 + calmMix * 0.08
+      : config.warpSpeedBase + features.bass * 2.4 + features.energy * 0.9;
+    const streakMultiplier = visualIdle
+      ? 0.12
+      : config.streakLengthMultiplier * (0.4 + features.bass * 0.5);
+    const showStreaks = !visualIdle && (features.energy > 0.12 || features.beat);
 
     this.starField.update(
       warpSpeed,
       streakMultiplier,
       showStreaks,
-      isIdle ? 0 : features.mids,
-      isIdle ? 0 : features.highs,
-      !isIdle && features.beat,
+      visualIdle ? 0 : features.bass,
+      visualIdle ? 0 : features.mids,
+      visualIdle ? 0 : features.highs,
+      visualIdle ? 0 : features.energy,
+      config.cosmicTension,
+      !visualIdle && features.beat,
       config.accentColor
     );
 
     this.cameraRig.update(
       warpSpeed,
-      features.bass,
+      visualIdle ? 0 : features.bass,
       config.cameraShakeIntensity,
-      isIdle,
-      !isIdle && features.beat
+      visualIdle,
+      !visualIdle && features.beat
     );
 
     this.nebula.update(
-      isIdle ? 0 : config.nebulaIntensity,
-      isIdle ? 0 : features.mids,
+      0,
+      visualIdle ? 0 : features.mids,
       config.primaryColor,
-      config.secondaryColor,
-      config.accentColor,
-      !isIdle && features.beat
+      config.secondaryColor
     );
 
-    if (!isIdle && features.beat) {
-      this.beatBloom = config.bloomStrengthBase + 1.8;
+    if (!visualIdle && features.beat) {
+      this.beatBloom = config.bloomStrengthBase * 0.35 + 0.12;
     }
-    this.beatBloom *= 0.82;
+    this.beatBloom *= 0.8;
 
-    const energyBloom = isIdle ? 0 : features.energy * 1.2;
-    const bloomStrength = isIdle
-      ? 0.4
-      : Math.max(config.bloomStrengthBase + energyBloom, this.beatBloom);
-    this.postProcessing.updateBloom(bloomStrength);
+    const energyBloom = visualIdle ? 0 : features.energy * 0.18;
+    const bloomStrength = visualIdle
+      ? 0.18
+      : Math.min(0.38, Math.max(config.bloomStrengthBase * 0.35 + energyBloom, this.beatBloom));
+    this.postProcessing.updateBloom(bloomStrength, 0.45, 0.82);
 
     this.postProcessing.render();
   };
@@ -152,5 +168,15 @@ export class SceneManager {
     }
 
     console.log('[SceneManager] Disposed.');
+  }
+
+  private rebuildStarField(density: number): void {
+    this.scene.remove(this.starField.points);
+    this.scene.remove(this.starField.streaks);
+    this.starField.dispose();
+    this.starDensity = density;
+    this.starField = new StarField(density);
+    this.scene.add(this.starField.points);
+    this.scene.add(this.starField.streaks);
   }
 }

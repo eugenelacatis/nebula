@@ -14,13 +14,22 @@ import type { SceneSeedResponse } from '@/config/apiContract';
 const ACCEPTED_TYPES = ['audio/mpeg', 'audio/mp3'];
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
+function pickIdentityFields(config: Partial<SceneSeedResponse['config']>) {
+  return {
+    primaryColor: config.primaryColor,
+    secondaryColor: config.secondaryColor,
+    accentColor: config.accentColor,
+    mood: config.mood,
+  };
+}
+
 export default function Upload() {
   const phase = useAppStore((s) => s.phase);
   const setPhase = useAppStore((s) => s.setPhase);
   const setMetadata = useAppStore((s) => s.setMetadata);
   const setAudioUrl = useAppStore((s) => s.setAudioUrl);
   const reset = useAppStore((s) => s.reset);
-  const setConfig = useSceneStore((s) => s.setConfig);
+  const patchConfig = useSceneStore((s) => s.patchConfig);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -39,9 +48,11 @@ export default function Upload() {
     const metadata = await extractMetadata(file);
     setMetadata(metadata);
 
-    // Apply color seed immediately from song identity (overwritten by AI if it responds)
-    const seeded = clampConfig({ ...DEFAULT_SCENE_CONFIG, ...seedConfigFromSong(metadata.title, metadata.artist) });
-    setConfig(seeded);
+    const seeded = clampConfig({
+      ...DEFAULT_SCENE_CONFIG,
+      ...seedConfigFromSong(metadata.title, metadata.artist),
+    });
+    patchConfig(pickIdentityFields(seeded));
 
     const url = URL.createObjectURL(file);
     setAudioUrl(url);
@@ -55,7 +66,6 @@ export default function Upload() {
     pipelineRef.current.onEnded = () => {
       pipelineRef.current?.dispose();
       pipelineRef.current = null;
-      setConfig({ ...DEFAULT_SCENE_CONFIG });
       reset();
     };
 
@@ -63,7 +73,7 @@ export default function Upload() {
 
     fetchSceneSeed(metadata.title, metadata.artist);
     setPhase('active');
-  }, [setPhase, setMetadata, setAudioUrl, reset, setConfig]);
+  }, [patchConfig, reset, setAudioUrl, setMetadata, setPhase]);
 
   const fetchSceneSeed = async (title: string, artist: string) => {
     const controller = new AbortController();
@@ -80,7 +90,7 @@ export default function Upload() {
 
       const data: SceneSeedResponse = await res.json();
       const clamped = clampConfig(data.config);
-      transitionToConfig(clamped);
+      transitionToConfig(clamped, { preserveTunedValues: true });
     } catch {
       // Color seed already applied, no action needed
     }

@@ -14,8 +14,6 @@ export class Nebula {
   private material: THREE.ShaderMaterial;
   private rotations: Float32Array;
   private driftSpeeds: Float32Array;
-  private time = 0;
-  private beatFlash = 0;
 
   constructor() {
     this.group = new THREE.Group();
@@ -40,10 +38,8 @@ export class Nebula {
       uniforms: {
         uPrimaryColor: { value: new THREE.Vector3(0.1, 0.1, 0.24) },
         uSecondaryColor: { value: new THREE.Vector3(0.18, 0.18, 0.42) },
-        uAccentColor: { value: new THREE.Vector3(0.29, 0.29, 1.0) },
         uOpacity: { value: 0.0 },
         uBlend: { value: 0.0 },
-        uBeatFlash: { value: 0.0 },
         uSize: { value: 80.0 },
       },
       vertexShader: `
@@ -57,18 +53,15 @@ export class Nebula {
       fragmentShader: `
         uniform vec3 uPrimaryColor;
         uniform vec3 uSecondaryColor;
-        uniform vec3 uAccentColor;
         uniform float uOpacity;
         uniform float uBlend;
-        uniform float uBeatFlash;
         void main() {
           vec2 uv = gl_PointCoord - 0.5;
           float dist = length(uv);
           if (dist > 0.5) discard;
           float alpha = smoothstep(0.5, 0.1, dist) * uOpacity;
           vec3 baseColor = mix(uPrimaryColor, uSecondaryColor, uBlend);
-          vec3 color = mix(baseColor, uAccentColor, uBeatFlash * 0.6);
-          gl_FragColor = vec4(color, alpha);
+          gl_FragColor = vec4(baseColor, alpha);
         }
       `,
       transparent: true,
@@ -84,25 +77,14 @@ export class Nebula {
     intensity: number,
     mids: number,
     primaryColor: string,
-    secondaryColor: string,
-    accentColor: string,
-    beat: boolean
+    secondaryColor: string
   ): void {
-    this.time += 0.005;
-
-    if (beat) {
-      this.beatFlash = 1.0;
-    }
-    this.beatFlash *= 0.85;
-
-    const colorBlend = 0.5 + 0.5 * Math.sin(this.time * (2 * Math.PI) / 8) + mids * 0.3;
+    const colorBlend = 0;
 
     this.material.uniforms.uPrimaryColor.value = hexToVec3(primaryColor);
     this.material.uniforms.uSecondaryColor.value = hexToVec3(secondaryColor);
-    this.material.uniforms.uAccentColor.value = hexToVec3(accentColor);
-    this.material.uniforms.uOpacity.value = intensity;
-    this.material.uniforms.uBlend.value = Math.min(1, colorBlend);
-    this.material.uniforms.uBeatFlash.value = this.beatFlash;
+    this.material.uniforms.uOpacity.value = 0;
+    this.material.uniforms.uBlend.value = colorBlend;
 
     const posAttr = this.points.geometry.attributes.position as THREE.BufferAttribute;
     for (let i = 0; i < NEBULA_COUNT; i++) {
