@@ -16,62 +16,67 @@ const VERT = /* glsl */ `
 
   varying vec3  vColor;
   varying float vAlpha;
+  varying float vRadiusNorm;
 
   void main() {
     vColor = aColor;
 
     vec3 pos = position;
-    vec3 dir = normalize(pos + vec3(0.0001));
 
-    // Orbital drift — audio reactive
+    // Radial distance from galaxy center (XZ plane)
+    float r = length(pos.xz);
+    vRadiusNorm = clamp(r / 15.0, 0.0, 1.0);
+
+    // --- Traveling radial waves: sin(ωt - kr) propagates outward from center ---
+    // Different spatial (k) and temporal (ω) frequencies per band so waves
+    // visually separate and don't cancel each other out.
+
+    // Bass: slow deep wave, long wavelength (~5 units), travels outward
+    float bassPhase = uTime * 2.5 - r * 1.2;
+    pos.y += sin(bassPhase) * uBass * 2.8;
+
+    // Mid: medium wave, slightly faster
+    float midPhase = uTime * 3.2 - r * 1.8 + aOffset * 1.0;
+    pos.y += sin(midPhase) * uMid * 1.6;
+
+    // High: fast short ripple with per-particle phase for texture
+    float highPhase = uTime * 5.5 - r * 3.0 + aOffset * 3.14159;
+    pos.y += sin(highPhase) * uHigh * 0.9;
+
+    // --- Beat: expanding ring wave (not an explosion from center) ---
+    // uBeat decays 1→0 over ~0.25s; ring front expands from r=0 to r=16
+    float ringR    = (1.0 - uBeat) * 16.0;
+    float distRing = r - ringR;
+    float ring     = exp(-distRing * distRing * 0.35) * uBeat;
+    pos.y += ring * 5.5;
+
+    // Gentle radial nudge at the ring front only (no center explosion)
+    vec2 radial2 = length(pos.xz) > 0.001 ? normalize(pos.xz) : vec2(0.0);
+    pos.x += radial2.x * ring * 0.6;
+    pos.z += radial2.y * ring * 0.6;
+
+    // --- Orbital drift — slow galaxy rotation, audio-reactive speed ---
     float angle = uTime * 0.08 + aOffset * 6.2831;
-    float r     = length(pos.xz);
-    float drift = 0.002 + uOverall * 0.010;
+    float drift = 0.002 + uOverall * 0.006;
     pos.x += sin(angle) * r * drift;
     pos.z += cos(angle) * r * drift;
-
-    // Bass pulse — push outward radially
-    pos += dir * uBass * 3.8 * aScale;
-
-    // Mid: vertical oscillation (two overlapping waves for complexity)
-    pos.y += sin(uTime * 1.5 + aOffset * 12.0) * uMid * 2.0;
-    pos.y += cos(uTime * 0.9  + aOffset * 7.0)  * uOverall * 1.0;
-
-    // High freq: lateral turbulent swirl
-    float hiPhase = uTime * 2.0 + aOffset * 9.0;
-    pos.x += sin(hiPhase)        * uHigh * 1.2;
-    pos.z += cos(hiPhase * 1.3)  * uHigh * 1.0;
-
-    // Energy delta: gentle surge impulse
-    pos += dir * uDelta * 3.0;
-
-    // Beat explosion
-    pos += dir * uBeat * 5.0;
-
-    // Continuous complex drift — always lively even at steady audio levels
-    float tx = sin(uTime * 0.35 + aOffset * 5.0) * cos(uTime * 0.22 + aOffset * 3.1);
-    float ty = cos(uTime * 0.28 + aOffset * 6.3);
-    float tz = sin(uTime * 0.41 + aOffset * 4.2) * sin(uTime * 0.19 + aOffset * 7.8);
-    pos.x += tx * uOverall * 0.7;
-    pos.y += ty * uOverall * 0.5;
-    pos.z += tz * uOverall * 0.6;
 
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mv;
 
-    // Size: base + audio response
-    float sz  = aScale * (4.0 + uBass * 14.0 + uHigh * 6.0);
-    sz       += uBeat * 8.0;
+    // Size: moderate range, ring gets a boost
+    float sz = aScale * (3.5 + uBass * 5.0 + uHigh * 3.0) + ring * 7.0;
     gl_PointSize = sz * (300.0 / -mv.z);
-    gl_PointSize = clamp(gl_PointSize, 0.5, 18.0);
+    gl_PointSize = clamp(gl_PointSize, 0.5, 14.0);
 
-    vAlpha = 0.55 + uOverall * 0.45;
+    vAlpha = 0.22 + uOverall * 0.12;
   }
 `;
 
 const FRAG = /* glsl */ `
   varying vec3  vColor;
   varying float vAlpha;
+  varying float vRadiusNorm;
 
   uniform float uBass;
   uniform float uHigh;
@@ -83,16 +88,15 @@ const FRAG = /* glsl */ `
     float mask = 1.0 - smoothstep(0.5, 1.0, d);
     if (mask < 0.01) discard;
 
-    // Inner bright core
-    float core = 1.0 - smoothstep(0.0, 0.45, d);
-
     vec3 col = vColor;
-    col += core * 0.6;                   // bright center
-    col += uBass  * vec3(0.8, 0.1, 0.4) * 0.5;
-    col += uHigh  * vec3(0.1, 0.6, 1.0) * 0.3;
-    col += uBeat  * vec3(1.0, 0.9, 0.5) * 0.4;
+    // No per-particle core glow — additive stacking does the work
+    col += uBeat * vec3(1.0, 0.9, 0.5) * 0.15;
 
-    gl_FragColor = vec4(col, mask * vAlpha);
+    // Radius-based alpha: center particles are dim to prevent blowout from stacking.
+    // smoothstep(0.0, 0.35, vRadiusNorm): 0 at r=0, 1 at r≈5.25
+    float centerFade = 0.15 + smoothstep(0.0, 0.35, vRadiusNorm) * 0.85;
+
+    gl_FragColor = vec4(col, mask * vAlpha * centerFade);
   }
 `;
 
@@ -125,8 +129,8 @@ export class ParticleSystem {
       // Galaxy / nebula distribution
       const arm     = Math.floor(Math.random() * 3); // 3 spiral arms
       const armAngle = (arm / 3) * Math.PI * 2;
-      const radius   = Math.random() < 0.15
-        ? Math.random() * 3.5          // dense core
+      const radius   = Math.random() < 0.04
+        ? Math.random() * 3.5          // sparse core (4%)
         : 3.5 + Math.random() * 12;   // disk
 
       const angle   = armAngle + (radius / 12) * Math.PI * 3.5 + (Math.random() - 0.5) * 0.9;
@@ -144,10 +148,10 @@ export class ParticleSystem {
       // Color based on radius and arm — purple/blue core, teal/pink outer
       const innerT = 1 - Math.min(radius / 15, 1);
       if (innerT > 0.6) {
-        // Inner: bright white-blue
-        col[i3]     = 0.7 + Math.random() * 0.3;
-        col[i3 + 1] = 0.7 + Math.random() * 0.3;
-        col[i3 + 2] = 1.0;
+        // Inner: dim blue-white, centerFade in shader handles the rest
+        col[i3]     = 0.25 + Math.random() * 0.15;
+        col[i3 + 1] = 0.25 + Math.random() * 0.15;
+        col[i3 + 2] = 0.45 + Math.random() * 0.15;
       } else if (arm === 0) {
         // Arm 0: purple/magenta
         col[i3]     = 0.6 + Math.random() * 0.4;

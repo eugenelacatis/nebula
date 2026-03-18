@@ -117,7 +117,7 @@ export default function UI({
 
       <p className="tip">
         Click <strong>Play</strong> to start a preset, or upload your own audio.
-        Move the mouse to rotate the camera.
+        Drag to orbit · Scroll to zoom.
       </p>
     </aside>
   );

@@ -3,6 +3,7 @@ import { EffectComposer }  from 'three/examples/jsm/postprocessing/EffectCompose
 import { RenderPass }      from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass }      from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { OrbitControls }   from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { AudioEngine }    from './AudioEngine.js';
 import { SynthEngine }    from './SynthEngine.js';
@@ -26,7 +27,6 @@ export class NebulaApp {
     this._particleCount  = 18000;
 
     this._clock     = new THREE.Clock();
-    this._mouse     = new THREE.Vector2();
     this._disposed  = false;
     this._raf       = null;
 
@@ -49,14 +49,25 @@ export class NebulaApp {
     this.scene.background = null;
 
     this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 500);
-    this.camera.position.set(0, 6, 22);
+    this.camera.position.set(0, 8, 22);
     this.camera.lookAt(0, 0, 0);
+
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.06;
+    this.controls.minDistance   = 5;
+    this.controls.maxDistance   = 60;
+    this.controls.autoRotate    = true;
+    this.controls.autoRotateSpeed = 0.4;
+    // Allow full vertical range so user can look from below or above
+    this.controls.minPolarAngle = 0;
+    this.controls.maxPolarAngle = Math.PI;
 
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.55, 0.25, 0.85   // threshold 0.85: only the very brightest particle cores bloom
+      0.3, 0.4, 0.88   // low strength, higher threshold — only true peaks bloom
     );
     this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());
@@ -77,12 +88,7 @@ export class NebulaApp {
       this.renderer.setSize(w, h);
       this.composer.setSize(w, h);
     };
-    this._onMouseMove = e => {
-      this._mouse.x = (e.clientX / window.innerWidth  - 0.5) * 2;
-      this._mouse.y = (e.clientY / window.innerHeight - 0.5) * 2;
-    };
-    window.addEventListener('resize',    this._onResize);
-    window.addEventListener('mousemove', this._onMouseMove);
+    window.addEventListener('resize', this._onResize);
   }
 
   // ─── Public API (called by React) ───────────────────────────────────────────
@@ -148,8 +154,8 @@ export class NebulaApp {
   dispose() {
     this._disposed = true;
     cancelAnimationFrame(this._raf);
-    window.removeEventListener('resize',    this._onResize);
-    window.removeEventListener('mousemove', this._onMouseMove);
+    window.removeEventListener('resize', this._onResize);
+    this.controls?.dispose();
     this.skybox?.dispose();
     this.renderer?.dispose();
   }
@@ -190,14 +196,9 @@ export class NebulaApp {
     const dt = this._clock.getDelta();
 
     this.audio.update();
+    this.controls.update();
 
-    const t = this._clock.elapsedTime;
-    this.camera.position.x = Math.sin(t * 0.06) * 22 + this._mouse.x * 1.5;
-    this.camera.position.z = Math.cos(t * 0.06) * 22;
-    this.camera.position.y = 6 + Math.sin(t * 0.04) * 2 - this._mouse.y * 1.5;
-    this.camera.lookAt(0, 0, 0);
-
-    this.bloomPass.strength = 0.28 + this.audio.bass * 0.14;
+    this.bloomPass.strength = 0.15 + this.audio.bass * 0.08;
 
     if (this.ps) this.ps.update(dt, this.audio);
 
