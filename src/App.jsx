@@ -38,6 +38,7 @@ export default function App() {
 
   const handleBloomChange = (val) => {
     setBloom(val);
+    appRef.current?.setBloom(val / 100);
   };
 
   const handleParticleToggle = () => {

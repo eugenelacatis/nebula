@@ -24,6 +24,7 @@ export class NebulaApp {
     this.activePreset    = null;
     this.useUploadedFile = false;
     this.volume          = 0.8;
+    this._bloomScale     = 0.46;
     this._particleCount  = 18000;
 
     this._clock     = new THREE.Clock();
@@ -104,6 +105,7 @@ export class NebulaApp {
     if (!this.isPlaying) {
       if (!this.audio.context) {
         await this.audio.init();
+        this.audio.setVolume(this.volume);
         this.synth = new SynthEngine(this.audio.context, this.audio.gainNode);
         this._rebuildParticles(this._particleCount);
       } else {
@@ -126,7 +128,11 @@ export class NebulaApp {
 
   setVolume(val) {
     this.volume = val;
-    this.audio.setVolume(val);
+    if (this.audio.gainNode) this.audio.setVolume(val);
+  }
+
+  setBloom(val) {
+    this._bloomScale = val;
   }
 
   rebuildParticles(count) {
@@ -164,13 +170,18 @@ export class NebulaApp {
 
   _startPlayback() {
     if (this.synth) this.synth.stop();
-    if (this.useUploadedFile) return;
+    if (this.useUploadedFile) {
+      this.audio.resumeFile();
+      return;
+    }
     if (this.activePreset) this.synth.play(this.activePreset);
   }
 
   _stopPlayback() {
     if (this.synth) this.synth.stop();
-    if (this.audio.fileNode) {
+    if (this.useUploadedFile) {
+      this.audio.pauseFile();
+    } else if (this.audio.fileNode) {
       try { this.audio.fileNode.stop(); } catch (_) {}
       this.audio.fileNode = null;
     }
@@ -195,12 +206,16 @@ export class NebulaApp {
 
     const dt = this._clock.getDelta();
 
-    this.audio.update();
+    if (this.isPlaying) this.audio.update();
     this.controls.update();
 
-    this.bloomPass.strength = 0.15 + this.audio.bass * 0.08;
+    const audioData = this.isPlaying
+      ? this.audio
+      : { bass: 0, mid: 0, high: 0, overall: 0, energyDelta: 0, beatDetected: false };
 
-    if (this.ps) this.ps.update(dt, this.audio);
+    this.bloomPass.strength = 0.05 + this._bloomScale * (0.5 + audioData.bass * 1.5);
+
+    if (this.ps) this.ps.update(dt, audioData);
 
     this.skybox.update(dt);
     this.composer.render();
@@ -209,10 +224,21 @@ export class NebulaApp {
   }
 
   _updateVU() {
-    const bands = { bass: this.audio.bass, mid: this.audio.mid, high: this.audio.high };
-    ['bass', 'mid', 'high'].forEach(band => {
-      const el = document.getElementById(`vu-${band}`);
-      if (el) el.style.width = `${(bands[band] * 100).toFixed(1)}%`;
-    });
+    const a = this.isPlaying ? this.audio : null;
+    const bars = {
+      sub:      a?.subBass          ?? 0,
+      bass:     a?.bass             ?? 0,
+      mid:      a?.mid              ?? 0,
+      presence: a?.presence         ?? 0,
+      high:     a?.high             ?? 0,
+      centroid: a?.spectralCentroid ?? 0,
+      flux:     a?.spectralFlux     ?? 0,
+    };
+    for (const [key, val] of Object.entries(bars)) {
+      const el = document.getElementById(`vu-${key}`);
+      if (el) el.style.width = `${(val * 100).toFixed(1)}%`;
+    }
+    const bpmEl = document.getElementById('vu-bpm');
+    if (bpmEl) bpmEl.textContent = (a?.estimatedBPM > 0) ? `${a.estimatedBPM}` : '—';
   }
 }

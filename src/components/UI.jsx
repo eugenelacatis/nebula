@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 
 const PRESETS = [
   { id: 'cosmic-pulse', label: 'Cosmic Pulse', genre: 'Techno / 128 BPM', icon: '⚡', color: '#ff00ff' },
@@ -12,9 +12,11 @@ export default function UI({
   onParticleToggle, onFileUpload,
 }) {
   const fileInputRef = useRef(null);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside id="ui">
+    <>
+    <aside id="ui" className={collapsed ? 'collapsed' : ''}>
       <h1>✦ Music Particles</h1>
 
       {/* Preset tracks */}
@@ -94,6 +96,10 @@ export default function UI({
       <section className="vu-meter">
         <p className="section-title">Frequencies</p>
         <div className="vu-row">
+          <span>Sub</span>
+          <div className="vu-track"><div className="vu-bar" id="vu-sub" /></div>
+        </div>
+        <div className="vu-row">
           <span>Bass</span>
           <div className="vu-track"><div className="vu-bar" id="vu-bass" /></div>
         </div>
@@ -102,8 +108,26 @@ export default function UI({
           <div className="vu-track"><div className="vu-bar" id="vu-mid" /></div>
         </div>
         <div className="vu-row">
+          <span>Pres</span>
+          <div className="vu-track"><div className="vu-bar" id="vu-presence" /></div>
+        </div>
+        <div className="vu-row">
           <span>High</span>
           <div className="vu-track"><div className="vu-bar" id="vu-high" /></div>
+        </div>
+        <div className="vu-row">
+          <span>Cent</span>
+          <div className="vu-track"><div className="vu-bar" id="vu-centroid" /></div>
+        </div>
+        <div className="vu-row">
+          <span>Flux</span>
+          <div className="vu-track"><div className="vu-bar" id="vu-flux" /></div>
+        </div>
+        <div className="vu-row">
+          <span>BPM</span>
+          <div className="vu-track" style={{display:'flex', alignItems:'center'}}>
+            <span id="vu-bpm" style={{fontSize:'0.65rem', color:'var(--text2)', paddingLeft:'4px'}}>—</span>
+          </div>
         </div>
       </section>
 
@@ -120,5 +144,14 @@ export default function UI({
         Drag to orbit · Scroll to zoom.
       </p>
     </aside>
+    <button
+      id="panel-toggle"
+      className={collapsed ? 'collapsed' : ''}
+      onClick={() => setCollapsed(c => !c)}
+      title={collapsed ? 'Show panel' : 'Hide panel'}
+    >
+      {collapsed ? '›' : '‹'}
+    </button>
+    </>
   );
 }

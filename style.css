@@ -41,6 +41,40 @@ html, body {
   flex-direction: column;
   gap: 20px;
   z-index: 10;
+  transition: transform 0.3s ease;
+}
+
+#ui.collapsed {
+  transform: translateX(-300px);
+}
+
+#panel-toggle {
+  position: fixed;
+  top: 50%;
+  left: 300px;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 52px;
+  background: var(--surface);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--border);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  color: var(--text2);
+  font-size: 1rem;
+  cursor: pointer;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.3s ease, color 0.2s;
+  padding: 0;
+}
+
+#panel-toggle:hover { color: var(--text); }
+
+#panel-toggle.collapsed {
+  left: 0;
 }
 
 #ui h1 {
@@ -229,9 +263,13 @@ input[type=range]::-webkit-slider-thumb {
   transition: width 0.05s ease-out;
 }
 
-#vu-bass { background: linear-gradient(90deg, #ff0066, #ff44aa); }
-#vu-mid  { background: linear-gradient(90deg, #00ccff, #00ff99); }
-#vu-high { background: linear-gradient(90deg, #ffcc00, #ffffff); }
+#vu-sub      { background: linear-gradient(90deg, #cc00ff, #8800cc); }
+#vu-bass     { background: linear-gradient(90deg, #ff0066, #ff44aa); }
+#vu-mid      { background: linear-gradient(90deg, #00ccff, #00ff99); }
+#vu-presence { background: linear-gradient(90deg, #00ff99, #aaff00); }
+#vu-high     { background: linear-gradient(90deg, #ffcc00, #ffffff); }
+#vu-centroid { background: linear-gradient(90deg, #4488ff, #ff88ff); }
+#vu-flux     { background: linear-gradient(90deg, #ff8800, #ffdd00); }
 
 /* ── Misc buttons ─────────────────────────────────────────────────────── */
 
