@@ -12,6 +12,7 @@ const VERT = /* glsl */ `
   uniform float uHigh;
   uniform float uOverall;
   uniform float uBeat;
+  uniform float uDelta;
 
   varying vec3  vColor;
   varying float vAlpha;
@@ -19,24 +20,41 @@ const VERT = /* glsl */ `
   void main() {
     vColor = aColor;
 
-    // Animate position
     vec3 pos = position;
+    vec3 dir = normalize(pos + vec3(0.0001));
 
-    // Orbital drift
+    // Orbital drift — audio reactive
     float angle = uTime * 0.08 + aOffset * 6.2831;
     float r     = length(pos.xz);
-    pos.x += sin(angle) * r * 0.002 * uOverall;
-    pos.z += cos(angle) * r * 0.002 * uOverall;
+    float drift = 0.002 + uOverall * 0.010;
+    pos.x += sin(angle) * r * drift;
+    pos.z += cos(angle) * r * drift;
 
     // Bass pulse — push outward radially
-    float bassLift = uBass * 2.8 * aScale;
-    pos += normalize(pos) * bassLift;
+    pos += dir * uBass * 3.8 * aScale;
 
-    // Mid: vertical oscillation
-    pos.y += sin(uTime * 1.5 + aOffset * 12.0) * uMid * 1.2;
+    // Mid: vertical oscillation (two overlapping waves for complexity)
+    pos.y += sin(uTime * 1.5 + aOffset * 12.0) * uMid * 2.0;
+    pos.y += cos(uTime * 0.9  + aOffset * 7.0)  * uOverall * 1.0;
 
-    // Beat explosion (smoothed via uBeat)
-    pos += normalize(pos) * uBeat * 3.5;
+    // High freq: lateral turbulent swirl
+    float hiPhase = uTime * 2.0 + aOffset * 9.0;
+    pos.x += sin(hiPhase)        * uHigh * 1.2;
+    pos.z += cos(hiPhase * 1.3)  * uHigh * 1.0;
+
+    // Energy delta: gentle surge impulse
+    pos += dir * uDelta * 3.0;
+
+    // Beat explosion
+    pos += dir * uBeat * 5.0;
+
+    // Continuous complex drift — always lively even at steady audio levels
+    float tx = sin(uTime * 0.35 + aOffset * 5.0) * cos(uTime * 0.22 + aOffset * 3.1);
+    float ty = cos(uTime * 0.28 + aOffset * 6.3);
+    float tz = sin(uTime * 0.41 + aOffset * 4.2) * sin(uTime * 0.19 + aOffset * 7.8);
+    pos.x += tx * uOverall * 0.7;
+    pos.y += ty * uOverall * 0.5;
+    pos.z += tz * uOverall * 0.6;
 
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mv;
@@ -103,7 +121,6 @@ export class ParticleSystem {
 
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
-      const t  = i / count;
 
       // Galaxy / nebula distribution
       const arm     = Math.floor(Math.random() * 3); // 3 spiral arms
@@ -171,6 +188,7 @@ export class ParticleSystem {
       uHigh:    { value: 0 },
       uOverall: { value: 0 },
       uBeat:    { value: 0 },
+      uDelta:   { value: 0 },
     };
 
     this.mat = new THREE.ShaderMaterial({
@@ -194,6 +212,7 @@ export class ParticleSystem {
     u.uMid.value     = audio.mid     || 0;
     u.uHigh.value    = audio.high    || 0;
     u.uOverall.value = audio.overall || 0;
+    u.uDelta.value   = audio.energyDelta || 0;
 
     if (audio.beatDetected) this._beat = 1.0;
     u.uBeat.value = this._beat;

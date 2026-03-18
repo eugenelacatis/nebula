@@ -11,17 +11,19 @@ export class AudioEngine {
     this.mid = 0;
     this.high = 0;
     this.overall = 0;
+    this.energyDelta = 0;
     this.beatDetected = false;
 
     this._bassHistory = new Array(43).fill(0);
     this._beatCooldown = 0;
+    this._prevOverall = 0;
   }
 
   async init() {
     this.context = new (window.AudioContext || window.webkitAudioContext)();
     this.analyser = this.context.createAnalyser();
     this.analyser.fftSize = 2048;
-    this.analyser.smoothingTimeConstant = 0.82;
+    this.analyser.smoothingTimeConstant = 0.78;
 
     this.gainNode = this.context.createGain();
     this.gainNode.gain.value = 1.0;
@@ -84,6 +86,10 @@ export class AudioEngine {
     this.high    = this._avg(midEnd, highEnd) / 255;
     this.overall = this.bass * 0.5 + this.mid * 0.3 + this.high * 0.2;
 
+    // Frame-to-frame energy change — drives impulse movement in particles
+    this.energyDelta = Math.max(0, this.overall - this._prevOverall) * 3.0;
+    this._prevOverall = this.overall;
+
     // Beat detection via local average comparison
     this._bassHistory.push(this.bass);
     this._bassHistory.shift();
@@ -92,9 +98,9 @@ export class AudioEngine {
     if (this._beatCooldown > 0) {
       this._beatCooldown--;
       this.beatDetected = false;
-    } else if (this.bass > avgBass * 1.45 && this.bass > 0.18) {
+    } else if (this.bass > avgBass * 1.3 && this.bass > 0.15) {
       this.beatDetected = true;
-      this._beatCooldown = 12;
+      this._beatCooldown = 10;
     } else {
       this.beatDetected = false;
     }
