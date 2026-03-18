@@ -211,9 +211,10 @@ export class NebulaApp {
 
     const audioData = this.isPlaying
       ? this.audio
-      : { bass: 0, mid: 0, high: 0, overall: 0, energyDelta: 0, beatDetected: false };
+      : { bass: 0, mid: 0, high: 0, subBass: 0, presence: 0, overall: 0,
+          energyDelta: 0, beatDetected: false, spectralCentroid: 0.3, spectralFlux: 0 };
 
-    this.bloomPass.strength = 0.05 + this._bloomScale * (0.5 + audioData.bass * 1.5);
+    this.bloomPass.strength = Math.min(0.05 + this._bloomScale * (0.3 + audioData.bass * 0.5), 0.8);
 
     if (this.ps) this.ps.update(dt, audioData);
 

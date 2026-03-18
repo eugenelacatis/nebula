@@ -122,7 +122,7 @@ export class AudioEngine {
     this.mid      = this._avg(bassEnd, midEnd) / 255;
     this.presence = this._avg(midEnd, presenceEnd) / 255;
     this.high     = this._avg(presenceEnd, highEnd) / 255;
-    this.overall  = this.subBass * 0.2 + this.bass * 0.35 + this.mid * 0.25 + this.high * 0.2;
+    this.overall  = this.mid * 0.5 + this.high * 0.5;
 
     // Frame-to-frame energy change — drives impulse movement in particles
     this.energyDelta = Math.max(0, this.overall - this._prevOverall) * 3.0;

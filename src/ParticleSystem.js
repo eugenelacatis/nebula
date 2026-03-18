@@ -8,11 +8,8 @@ const VERT = /* glsl */ `
 
   uniform float uTime;
   uniform float uBass;
-  uniform float uMid;
-  uniform float uHigh;
-  uniform float uOverall;
+  uniform float uFlux;
   uniform float uBeat;
-  uniform float uDelta;
 
   varying vec3  vColor;
   varying float vAlpha;
@@ -22,54 +19,36 @@ const VERT = /* glsl */ `
     vColor = aColor;
 
     vec3 pos = position;
-
-    // Radial distance from galaxy center (XZ plane)
-    float r = length(pos.xz);
+    float r  = length(pos.xz);
     vRadiusNorm = clamp(r / 15.0, 0.0, 1.0);
 
-    // --- Traveling radial waves: sin(ωt - kr) propagates outward from center ---
-    // Different spatial (k) and temporal (ω) frequencies per band so waves
-    // visually separate and don't cancel each other out.
+    // Bass drives amplitude, spectral flux drives wave speed
+    float omega = 2.0 + uFlux * 3.0;
+    float phase = uTime * omega - r * 1.1;
+    pos.y += sin(phase) * uBass * 1.2;
 
-    // Bass: slow deep wave, long wavelength (~5 units), travels outward
-    float bassPhase = uTime * 2.5 - r * 1.2;
-    pos.y += sin(bassPhase) * uBass * 2.8;
+    // Beat: ring expands outward from center
+    float ringR = (1.0 - uBeat) * 16.0;
+    float ring  = exp(-(r - ringR) * (r - ringR) * 0.35) * uBeat;
+    pos.y += ring * 2.5;
+    vec2 radial = length(pos.xz) > 0.001 ? normalize(pos.xz) : vec2(0.0);
+    pos.x += radial.x * ring * 0.5;
+    pos.z += radial.y * ring * 0.5;
 
-    // Mid: medium wave, slightly faster
-    float midPhase = uTime * 3.2 - r * 1.8 + aOffset * 1.0;
-    pos.y += sin(midPhase) * uMid * 1.6;
-
-    // High: fast short ripple with per-particle phase for texture
-    float highPhase = uTime * 5.5 - r * 3.0 + aOffset * 3.14159;
-    pos.y += sin(highPhase) * uHigh * 0.9;
-
-    // --- Beat: expanding ring wave (not an explosion from center) ---
-    // uBeat decays 1→0 over ~0.25s; ring front expands from r=0 to r=16
-    float ringR    = (1.0 - uBeat) * 16.0;
-    float distRing = r - ringR;
-    float ring     = exp(-distRing * distRing * 0.35) * uBeat;
-    pos.y += ring * 5.5;
-
-    // Gentle radial nudge at the ring front only (no center explosion)
-    vec2 radial2 = length(pos.xz) > 0.001 ? normalize(pos.xz) : vec2(0.0);
-    pos.x += radial2.x * ring * 0.6;
-    pos.z += radial2.y * ring * 0.6;
-
-    // --- Orbital drift — slow galaxy rotation, audio-reactive speed ---
+    // Slow orbital drift
     float angle = uTime * 0.08 + aOffset * 6.2831;
-    float drift = 0.002 + uOverall * 0.006;
+    float drift = 0.002 + uFlux * 0.005;
     pos.x += sin(angle) * r * drift;
     pos.z += cos(angle) * r * drift;
 
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mv;
 
-    // Size: moderate range, ring gets a boost
-    float sz = aScale * (3.5 + uBass * 5.0 + uHigh * 3.0) + ring * 7.0;
+    float sz = aScale * (3.5 + uBass * 4.0) + ring * 6.0;
     gl_PointSize = sz * (300.0 / -mv.z);
-    gl_PointSize = clamp(gl_PointSize, 0.5, 14.0);
+    gl_PointSize = clamp(gl_PointSize, 0.5, 12.0);
 
-    vAlpha = 0.22 + uOverall * 0.12;
+    vAlpha = 0.20 + uFlux * 0.10;
   }
 `;
 
@@ -78,24 +57,17 @@ const FRAG = /* glsl */ `
   varying float vAlpha;
   varying float vRadiusNorm;
 
-  uniform float uBass;
-  uniform float uHigh;
   uniform float uBeat;
 
   void main() {
-    // Soft circular point
     float d    = length(gl_PointCoord - 0.5) * 2.0;
     float mask = 1.0 - smoothstep(0.5, 1.0, d);
     if (mask < 0.01) discard;
 
     vec3 col = vColor;
-    // No per-particle core glow — additive stacking does the work
     col += uBeat * vec3(1.0, 0.9, 0.5) * 0.15;
 
-    // Radius-based alpha: center particles are dim to prevent blowout from stacking.
-    // smoothstep(0.0, 0.35, vRadiusNorm): 0 at r=0, 1 at r≈5.25
     float centerFade = 0.15 + smoothstep(0.0, 0.35, vRadiusNorm) * 0.85;
-
     gl_FragColor = vec4(col, mask * vAlpha * centerFade);
   }
 `;
@@ -186,13 +158,10 @@ export class ParticleSystem {
 
   _buildMaterial() {
     this.uniforms = {
-      uTime:    { value: 0 },
-      uBass:    { value: 0 },
-      uMid:     { value: 0 },
-      uHigh:    { value: 0 },
-      uOverall: { value: 0 },
-      uBeat:    { value: 0 },
-      uDelta:   { value: 0 },
+      uTime: { value: 0 },
+      uBass: { value: 0 },
+      uFlux: { value: 0 },
+      uBeat: { value: 0 },
     };
 
     this.mat = new THREE.ShaderMaterial({
@@ -211,12 +180,9 @@ export class ParticleSystem {
     this._beat  = Math.max(0, this._beat - dt * 4.0);
 
     const u = this.uniforms;
-    u.uTime.value    = this._time;
-    u.uBass.value    = audio.bass    || 0;
-    u.uMid.value     = audio.mid     || 0;
-    u.uHigh.value    = audio.high    || 0;
-    u.uOverall.value = audio.overall || 0;
-    u.uDelta.value   = audio.energyDelta || 0;
+    u.uTime.value = this._time;
+    u.uBass.value = audio.bass          || 0;
+    u.uFlux.value = audio.spectralFlux  || 0;
 
     if (audio.beatDetected) this._beat = 1.0;
     u.uBeat.value = this._beat;
