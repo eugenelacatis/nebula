@@ -26,10 +26,9 @@ export class SynthEngine {
     this.trackId   = trackId;
     this.isPlaying = true;
     const builders = {
-      'cosmic-pulse' : () => this._startCosmicPulse(),
       'nebula-drift' : () => this._startNebulaDrift(),
     };
-    (builders[trackId] || builders['cosmic-pulse'])();
+    (builders[trackId] || builders['nebula-drift'])();
   }
 
   stop() {
@@ -38,32 +37,6 @@ export class SynthEngine {
     this.isPlaying = false;
   }
 
-  // ─── Track: Cosmic Pulse (techno 128 BPM) ───────────────────────────────────
-
-  _startCosmicPulse() {
-    const bpm    = 128;
-    const ms16th = (60 / bpm / 4) * 1000; // ~117 ms
-
-    // 16-step patterns
-    const bassNotes = [55, 0, 0, 55, 0, 55, 0, 0, 55, 0, 0, 55, 0, 0, 55, 0];
-    const kickOn    = [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0];
-    const snareOn   = [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0];
-    const hatOn     = [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0];
-    const melody    = [220, 247, 262, 294, 330, 294, 247, 220];
-
-    let step16 = 0;
-    const id = setInterval(() => {
-      const t = this.ctx.currentTime;
-      if (kickOn[step16])    this._kick(t);
-      if (snareOn[step16])   this._snare(t);
-      if (hatOn[step16])     this._hat(t, 0.25);
-      if (bassNotes[step16]) this._bassNote(bassNotes[step16], t, (ms16th / 1000) * 0.85, 0.5);
-      if (step16 % 8 === 0)  this._synthLead(melody[Math.floor(step16 / 8) % melody.length], t, (ms16th / 1000) * 2, 0.15);
-      step16 = (step16 + 1) % 16;
-    }, ms16th);
-
-    this._stopFns.push(() => clearInterval(id));
-  }
 
   // ─── Track: Nebula Drift (ambient) ──────────────────────────────────────────
 
@@ -100,6 +73,7 @@ export class SynthEngine {
 
     this._stopFns.push(() => { clearInterval(id); droneOsc.stop(); });
   }
+
 
   // ─── Instrument primitives ───────────────────────────────────────────────────
 

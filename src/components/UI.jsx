@@ -1,8 +1,7 @@
 import React, { useRef, useState } from 'react';
 
 const PRESETS = [
-  { id: 'cosmic-pulse', label: 'Cosmic Pulse', genre: 'Techno / 128 BPM', icon: '⚡', color: '#ff00ff' },
-  { id: 'nebula-drift', label: 'Nebula Drift', genre: 'Ambient',            icon: '🌌', color: '#00d4ff' },
+  { id: 'nebula-drift', label: 'Nebula Drift', genre: 'Ambient', icon: '1' },
 ];
 
 export default function UI({
@@ -16,7 +15,7 @@ export default function UI({
   return (
     <>
     <aside id="ui" className={collapsed ? 'collapsed' : ''}>
-      <h1>✦ Music Particles</h1>
+      <h1>Music Particles</h1>
 
       {/* Preset tracks */}
       <section>
@@ -41,7 +40,7 @@ export default function UI({
       <section className="upload-row">
         <p className="section-title">Your Music</p>
         <button id="btn-upload" onClick={() => fileInputRef.current?.click()}>
-          ⬆  Upload audio file
+          Upload Audio File
         </button>
         <span id="upload-label">{uploadLabel}</span>
         <input
@@ -62,7 +61,7 @@ export default function UI({
             className={isPlaying ? 'playing' : ''}
             onClick={onTogglePlay}
           >
-            {isPlaying ? '⏸  Pause' : '▶  Play'}
+            {isPlaying ? 'Pause' : 'Play'}
           </button>
         </div>
       </section>
@@ -139,8 +138,7 @@ export default function UI({
       </section>
 
       <p className="tip">
-        Click <strong>Play</strong> to start a preset, or upload your own audio.
-        Drag to orbit · Scroll to zoom.
+        Click <strong>Play</strong> to start a preset, or upload your own audio. Drag to orbit, scroll to zoom.
       </p>
     </aside>
     <button
