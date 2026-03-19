@@ -1,22 +1,10 @@
 // ─── Preset metadata sent to Claude as context ────────────────────────────────
 const PRESET_META = {
-  'cosmic-pulse': {
-    label: 'Cosmic Pulse',
-    genre: 'Techno',
-    bpm: 128,
-    mood: 'intense, mechanical, electric, driving, relentless',
-  },
   'nebula-drift': {
     label: 'Nebula Drift',
     genre: 'Ambient',
     bpm: null,
     mood: 'floating, dreamlike, vast, peaceful, ethereal, weightless',
-  },
-  'solar-winds': {
-    label: 'Solar Winds',
-    genre: 'Drum & Bass',
-    bpm: 170,
-    mood: 'explosive, chaotic, fast, raw power, turbulent',
   },
 };
 
