@@ -28,7 +28,6 @@ export class SynthEngine {
     const builders = {
       'cosmic-pulse' : () => this._startCosmicPulse(),
       'nebula-drift' : () => this._startNebulaDrift(),
-      'solar-winds'  : () => this._startSolarWinds(),
     };
     (builders[trackId] || builders['cosmic-pulse'])();
   }
@@ -100,34 +99,6 @@ export class SynthEngine {
     droneOsc.start();
 
     this._stopFns.push(() => { clearInterval(id); droneOsc.stop(); });
-  }
-
-  // ─── Track: Solar Winds (drum & bass 170 BPM) ────────────────────────────
-
-  _startSolarWinds() {
-    const bpm   = 170;
-    const ms16th = (60 / bpm / 4) * 1000;
-    // Amen-ish breakbeat pattern
-    const kick  = [1,0,0,0, 0,0,1,0, 0,0,0,1, 0,1,0,0];
-    const snare = [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0];
-    const hat   = [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1];
-    const bass  = [55,0,55,0, 41,0,55,0, 55,0,0,73, 41,0,55,0];
-
-    let s = 0;
-    const id = setInterval(() => {
-      const t = this.ctx.currentTime;
-      if (kick[s])  this._kick(t, 0.95);
-      if (snare[s]) this._snare(t, 0.6);
-      if (hat[s])   this._hat(t, 0.18);
-      if (bass[s])  this._bassNote(bass[s], t, (ms16th/1000)*0.7, 0.55);
-      if (s % 16 === 0) {
-        const mel = [330, 392, 440, 349][Math.floor(s / 16) % 4];
-        this._synthLead(mel, t, (ms16th/1000)*4, 0.1);
-      }
-      s = (s + 1) % 16;
-    }, ms16th);
-
-    this._stopFns.push(() => clearInterval(id));
   }
 
   // ─── Instrument primitives ───────────────────────────────────────────────────

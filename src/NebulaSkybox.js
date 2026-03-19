@@ -135,6 +135,13 @@ const DEFAULTS = {
   colorBias:       0.5,
 };
 
+// Clamps a THREE.Color's HSL lightness so no color is ever too bright for deep space
+function constrainColor(color, maxL) {
+  const hsl = {};
+  color.getHSL(hsl);
+  if (hsl.l > maxL) color.setHSL(hsl.h, hsl.s, maxL);
+}
+
 // ─── NebulaSkybox ─────────────────────────────────────────────────────────────
 export class NebulaSkybox {
   constructor(scene) {
@@ -189,10 +196,10 @@ export class NebulaSkybox {
   // ─── Public API ────────────────────────────────────────��────────────────────
 
   setParams(params) {
-    if (params.primaryColor)    this._tPrimary.set(params.primaryColor);
-    if (params.secondaryColor)  this._tSecondary.set(params.secondaryColor);
-    if (params.accentColor)     this._tAccent.set(params.accentColor);
-    if (params.backgroundColor) this._tBackground.set(params.backgroundColor);
+    if (params.primaryColor)    { this._tPrimary.set(params.primaryColor);     constrainColor(this._tPrimary,    0.22); }
+    if (params.secondaryColor)  { this._tSecondary.set(params.secondaryColor); constrainColor(this._tSecondary,  0.22); }
+    if (params.accentColor)     { this._tAccent.set(params.accentColor);       constrainColor(this._tAccent,     0.28); }
+    if (params.backgroundColor) { this._tBackground.set(params.backgroundColor); constrainColor(this._tBackground, 0.03); }
     if (params.animSpeed !== undefined) this._animSpeed = params.animSpeed;
 
     const s = this._tScalars;

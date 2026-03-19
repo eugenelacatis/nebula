@@ -12,12 +12,6 @@ const PRESET_META = {
     bpm: null,
     mood: 'floating, dreamlike, vast, peaceful, ethereal, weightless',
   },
-  'solar-winds': {
-    label: 'Solar Winds',
-    genre: 'Drum & Bass',
-    bpm: 170,
-    mood: 'explosive, chaotic, fast, raw power, turbulent',
-  },
 };
 
 export function presetMetadata(id) {
@@ -54,8 +48,10 @@ Return ONLY a valid JSON object — absolutely no markdown, no code fences, no e
   }
 }
 
+CRITICAL RULE: The skybox is a backdrop — it must NEVER overpower the particle foreground. Space is mostly dark. Even for high-energy genres the base should be near-black with rich deep colour accents, not a bright or hazy sky. Colours should look like glowing cosmic gas, not paint or atmosphere.
+
 Parameter guide — use the full range boldly:
-- primaryColor / secondaryColor / accentColor: three distinct cosmic colors matching the mood. Never pick colors that are similar to each other.
+- primaryColor / secondaryColor / accentColor: three distinct deep-space colors matching the mood. Never pick colors similar to each other. Avoid pure primaries (#ff0000, #00ff00, #0000ff), bright whites, and light pastels — colors must feel like deep space: rich, dark, and saturated.
 - backgroundColor: the deep space void, usually near-black but tinted with the dominant hue
 - nebulaOpacity: cloud density (0.2 = faint wisps barely visible, 1.0 = thick dense formations)
 - cloudScale: 1.0 = vast sweeping galaxy-sized formations, 6.0 = tight intricate turbulent detail

@@ -24,13 +24,6 @@ const PRESETS = [
     icon:     '🌌',
     color:    '#00d4ff',
   },
-  {
-    id:       'solar-winds',
-    label:    'Solar Winds',
-    genre:    'Drum & Bass / 170 BPM',
-    icon:     '🌪',
-    color:    '#ff6600',
-  },
 ];
 
 // ─── App ──────────────────────────────────────────────────────────────────────
