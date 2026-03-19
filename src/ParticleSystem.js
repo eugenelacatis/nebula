@@ -5,6 +5,7 @@ const VERT = /* glsl */ `
   attribute vec3  aColor;
   attribute vec3  aVelocity;
   attribute float aOffset;
+  attribute float aArm;
 
   uniform float uTime;
   uniform float uBass;
@@ -14,9 +15,11 @@ const VERT = /* glsl */ `
   varying vec3  vColor;
   varying float vAlpha;
   varying float vRadiusNorm;
+  varying float vArm;
 
   void main() {
     vColor = aColor;
+    vArm   = aArm;
 
     vec3 pos = position;
     float r  = length(pos.xz);
@@ -56,15 +59,31 @@ const FRAG = /* glsl */ `
   varying vec3  vColor;
   varying float vAlpha;
   varying float vRadiusNorm;
+  varying float vArm;
 
   uniform float uBeat;
+  uniform vec3  uCoreColor;
+  uniform vec3  uArm0Color;
+  uniform vec3  uArm1Color;
+  uniform vec3  uArm2Color;
 
   void main() {
     float d    = length(gl_PointCoord - 0.5) * 2.0;
     float mask = 1.0 - smoothstep(0.5, 1.0, d);
     if (mask < 0.01) discard;
 
-    vec3 col = vColor;
+    // Pick arm color from uniforms (vArm: 0=core, 1=arm0, 2=arm1, 3=arm2)
+    float isCore = step(vArm, 0.5);
+    float isArm0 = (1.0 - isCore) * step(vArm, 1.5);
+    float isArm1 = (1.0 - isCore - isArm0) * step(vArm, 2.5);
+    float isArm2 = 1.0 - isCore - isArm0 - isArm1;
+    vec3 baseColor = uCoreColor * isCore
+                   + uArm0Color * isArm0
+                   + uArm1Color * isArm1
+                   + uArm2Color * isArm2;
+
+    // vColor.r holds per-particle brightness variation (0.0–1.0)
+    vec3 col = baseColor * (0.6 + vColor.r * 0.4);
     col += uBeat * vec3(1.0, 0.9, 0.5) * 0.15;
 
     float centerFade = 0.15 + smoothstep(0.0, 0.35, vRadiusNorm) * 0.85;
@@ -87,26 +106,24 @@ export class ParticleSystem {
   _buildGeometry() {
     const count = this.count;
     const pos   = new Float32Array(count * 3);
-    const col   = new Float32Array(count * 3);
+    const col   = new Float32Array(count * 3); // r=g=b = per-particle brightness variation
+    const arm   = new Float32Array(count);     // 0=core, 1=arm0, 2=arm1, 3=arm2
     const scale = new Float32Array(count);
     const vel   = new Float32Array(count * 3);
     const off   = new Float32Array(count);
 
-    // Store base positions for reference
     this._basePos = new Float32Array(count * 3);
 
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
 
-      // Galaxy / nebula distribution
-      const arm     = Math.floor(Math.random() * 3); // 3 spiral arms
-      const armAngle = (arm / 3) * Math.PI * 2;
-      const radius   = Math.random() < 0.04
-        ? Math.random() * 3.5          // sparse core (4%)
-        : 3.5 + Math.random() * 12;   // disk
+      const armIdx   = Math.floor(Math.random() * 3);
+      const armAngle = (armIdx / 3) * Math.PI * 2;
+      const isCore   = Math.random() < 0.04;
+      const radius   = isCore ? Math.random() * 3.5 : 3.5 + Math.random() * 12;
 
-      const angle   = armAngle + (radius / 12) * Math.PI * 3.5 + (Math.random() - 0.5) * 0.9;
-      const spread  = Math.random() < 0.15 ? 0.5 : 0.25;
+      const angle     = armAngle + (radius / 12) * Math.PI * 3.5 + (Math.random() - 0.5) * 0.9;
+      const spread    = Math.random() < 0.15 ? 0.5 : 0.25;
       const thickness = (1.0 - radius / 18) * 1.5;
 
       pos[i3]     = Math.cos(angle) * radius + (Math.random() - 0.5) * spread * radius;
@@ -117,40 +134,24 @@ export class ParticleSystem {
       this._basePos[i3 + 1] = pos[i3 + 1];
       this._basePos[i3 + 2] = pos[i3 + 2];
 
-      // Color based on radius and arm — purple/blue core, teal/pink outer
-      const innerT = 1 - Math.min(radius / 15, 1);
-      if (innerT > 0.6) {
-        // Inner: dim blue-white, centerFade in shader handles the rest
-        col[i3]     = 0.25 + Math.random() * 0.15;
-        col[i3 + 1] = 0.25 + Math.random() * 0.15;
-        col[i3 + 2] = 0.45 + Math.random() * 0.15;
-      } else if (arm === 0) {
-        // Arm 0: purple/magenta
-        col[i3]     = 0.6 + Math.random() * 0.4;
-        col[i3 + 1] = 0.1 + Math.random() * 0.3;
-        col[i3 + 2] = 0.7 + Math.random() * 0.3;
-      } else if (arm === 1) {
-        // Arm 1: cyan/blue
-        col[i3]     = 0.05 + Math.random() * 0.2;
-        col[i3 + 1] = 0.5 + Math.random() * 0.5;
-        col[i3 + 2] = 0.8 + Math.random() * 0.2;
-      } else {
-        // Arm 2: pink/orange
-        col[i3]     = 0.9 + Math.random() * 0.1;
-        col[i3 + 1] = 0.3 + Math.random() * 0.4;
-        col[i3 + 2] = 0.4 + Math.random() * 0.3;
-      }
+      // Per-particle brightness variation stored in all 3 channels equally
+      const variation = Math.random();
+      col[i3] = col[i3 + 1] = col[i3 + 2] = variation;
 
-      scale[i]      = 0.3 + Math.random() * 0.7;
-      vel[i3]       = (Math.random() - 0.5) * 0.02;
-      vel[i3 + 1]   = (Math.random() - 0.5) * 0.01;
-      vel[i3 + 2]   = (Math.random() - 0.5) * 0.02;
-      off[i]        = Math.random();
+      // Arm index: 0=core, 1/2/3 = spiral arms
+      arm[i] = isCore ? 0 : armIdx + 1;
+
+      scale[i]    = 0.3 + Math.random() * 0.7;
+      vel[i3]     = (Math.random() - 0.5) * 0.02;
+      vel[i3 + 1] = (Math.random() - 0.5) * 0.01;
+      vel[i3 + 2] = (Math.random() - 0.5) * 0.02;
+      off[i]      = Math.random();
     }
 
     this.geo = new THREE.BufferGeometry();
     this.geo.setAttribute('position',  new THREE.BufferAttribute(pos,   3));
     this.geo.setAttribute('aColor',    new THREE.BufferAttribute(col,   3));
+    this.geo.setAttribute('aArm',      new THREE.BufferAttribute(arm,   1));
     this.geo.setAttribute('aScale',    new THREE.BufferAttribute(scale, 1));
     this.geo.setAttribute('aVelocity', new THREE.BufferAttribute(vel,   3));
     this.geo.setAttribute('aOffset',   new THREE.BufferAttribute(off,   1));
@@ -158,10 +159,22 @@ export class ParticleSystem {
 
   _buildMaterial() {
     this.uniforms = {
-      uTime: { value: 0 },
-      uBass: { value: 0 },
-      uFlux: { value: 0 },
-      uBeat: { value: 0 },
+      uTime:      { value: 0 },
+      uBass:      { value: 0 },
+      uFlux:      { value: 0 },
+      uBeat:      { value: 0 },
+      uCoreColor: { value: new THREE.Color('#3a3a7a') },
+      uArm0Color: { value: new THREE.Color('#aa22cc') },
+      uArm1Color: { value: new THREE.Color('#22aaee') },
+      uArm2Color: { value: new THREE.Color('#ee7722') },
+    };
+
+    // Target colors for smooth lerping
+    this._targetColors = {
+      core: new THREE.Color('#3a3a7a'),
+      arm0: new THREE.Color('#aa22cc'),
+      arm1: new THREE.Color('#22aaee'),
+      arm2: new THREE.Color('#ee7722'),
     };
 
     this.mat = new THREE.ShaderMaterial({
@@ -175,6 +188,13 @@ export class ParticleSystem {
     });
   }
 
+  setColorScheme({ coreColor, arm0Color, arm1Color, arm2Color } = {}) {
+    if (coreColor) this._targetColors.core.set(coreColor);
+    if (arm0Color) this._targetColors.arm0.set(arm0Color);
+    if (arm1Color) this._targetColors.arm1.set(arm1Color);
+    if (arm2Color) this._targetColors.arm2.set(arm2Color);
+  }
+
   update(dt, audio) {
     this._time += dt;
     this._beat  = Math.max(0, this._beat - dt * 4.0);
@@ -186,6 +206,13 @@ export class ParticleSystem {
 
     if (audio.beatDetected) this._beat = 1.0;
     u.uBeat.value = this._beat;
+
+    // Smoothly lerp colors toward targets (~1.5s transition)
+    const t = Math.min(dt * 3.0, 1.0);
+    u.uCoreColor.value.lerp(this._targetColors.core, t);
+    u.uArm0Color.value.lerp(this._targetColors.arm0, t);
+    u.uArm1Color.value.lerp(this._targetColors.arm1, t);
+    u.uArm2Color.value.lerp(this._targetColors.arm2, t);
   }
 
   dispose() {

@@ -45,7 +45,13 @@ Return ONLY a valid JSON object — absolutely no markdown, no code fences, no e
   "starBrightness":  <0.3–1.5>,
   "energy":          <0.3–0.85>,
   "animSpeed":       <0.05–2.0>,
-  "colorBias":       <0.0–1.0>
+  "colorBias":       <0.0–1.0>,
+  "particles": {
+    "coreColor": "#rrggbb",
+    "arm0Color": "#rrggbb",
+    "arm1Color": "#rrggbb",
+    "arm2Color": "#rrggbb"
+  }
 }
 
 Parameter guide — use the full range boldly:
@@ -59,6 +65,8 @@ Parameter guide — use the full range boldly:
 - energy: overall luminosity (0.3 = dark moody underworld, 0.85 = vivid bright)
 - animSpeed: nebula drift (0.05 = geological stillness, 2.0 = fast turbulent churning)
 - colorBias: 0.0 = primaryColor dominates, 1.0 = secondaryColor dominates
+- particles.coreColor: the dense center cluster — usually a dim/muted version of the dominant hue
+- particles.arm0/1/2Color: the three spiral arms — should complement the skybox palette but be distinct from each other
 
 Mandatory style targets — each must look nothing like the others:
 
@@ -115,7 +123,7 @@ export async function fetchSkyboxParams(metadata) {
       },
       body: JSON.stringify({
         model:      'claude-haiku-4-5-20251001',
-        max_tokens: 512,
+        max_tokens: 768,
         messages:   [{ role: 'user', content: buildPrompt(metadata) }],
       }),
     });

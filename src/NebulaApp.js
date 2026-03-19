@@ -190,12 +190,18 @@ export class NebulaApp {
   _rebuildParticles(count = 18000) {
     if (this.ps) this.ps.dispose();
     this.ps = new ParticleSystem(this.scene, count);
+    if (this._lastParticleColors) this.ps.setColorScheme(this._lastParticleColors);
   }
 
-  // Fire-and-forget: asks Claude for skybox params then smoothly transitions
+  // Fire-and-forget: asks Claude for skybox + particle params then smoothly transitions
   async _updateSkybox(metadata) {
     const params = await fetchSkyboxParams(metadata);
-    if (params) this.skybox.setParams(params);
+    if (!params) return;
+    this.skybox.setParams(params);
+    if (params.particles) {
+      this._lastParticleColors = params.particles;
+      if (this.ps) this.ps.setColorScheme(params.particles);
+    }
   }
 
   // ─── Render loop ─────────────────────────────────────────────────────────────
