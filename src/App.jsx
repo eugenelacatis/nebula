@@ -9,8 +9,8 @@ export default function App() {
   const [isPlaying,    setIsPlaying]    = useState(false);
   const [activePreset, setActivePreset] = useState(null);
   const [volume,       setVolume]       = useState(80);
-  const [bloom,        setBloom]        = useState(46);
-  const [particleCount, setParticleCount] = useState(8000);
+  const [bloom,        setBloom]        = useState(33);
+  const [particleCount, setParticleCount] = useState(35000);
   const [uploadLabel,    setUploadLabel]    = useState('Upload your music');
   const [activeLibrary,  setActiveLibrary]  = useState(null);
 
@@ -27,10 +27,11 @@ export default function App() {
   };
 
   const handleTogglePlay = async () => {
-    const playing = await appRef.current?.togglePlay();
-    setIsPlaying(playing);
-    // If no preset was selected, NebulaApp defaults to cosmic-pulse
-    if (playing && !activePreset) setActivePreset('cosmic-pulse');
+    const next = !isPlaying;
+    setIsPlaying(next);                          // flip UI immediately
+    if (next && !activePreset) setActivePreset('cosmic-pulse');
+    const actual = await appRef.current?.togglePlay();
+    if (actual !== next) setIsPlaying(actual);  // correct if engine disagreed
   };
 
   const handleVolumeChange = (val) => {

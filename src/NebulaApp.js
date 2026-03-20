@@ -24,8 +24,8 @@ export class NebulaApp {
     this.activePreset    = null;
     this.useUploadedFile = false;
     this.volume          = 0.8;
-    this._bloomScale     = 0.46;
-    this._particleCount  = 18000;
+    this._bloomScale     = 0.33;
+    this._particleCount  = 35000;
     this._skyboxReqId    = 0;   // incremented each call; stale responses are dropped
 
     this._clock     = new THREE.Clock();
@@ -69,7 +69,7 @@ export class NebulaApp {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.3, 0.4, 0.88   // low strength, higher threshold — only true peaks bloom
+      0.4, 0.4, 0.15   // strength, radius, threshold
     );
     this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());
@@ -243,7 +243,7 @@ export class NebulaApp {
       : { bass: 0, mid: 0, high: 0, subBass: 0, presence: 0, overall: 0,
           energyDelta: 0, beatDetected: false, spectralCentroid: 0.3, spectralFlux: 0 };
 
-    this.bloomPass.strength = Math.min(0.05 + this._bloomScale * (0.3 + audioData.bass * 0.5), 0.8);
+    this.bloomPass.strength = Math.min(this._bloomScale * 1.5 + audioData.bass * this._bloomScale * 0.6, 2.0);
 
     if (this.ps) this.ps.update(dt, audioData);
 
