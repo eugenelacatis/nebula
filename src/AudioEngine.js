@@ -71,6 +71,14 @@ export class AudioEngine {
   }
 
   _startFileFrom(offset) {
+    // Reset analysis state so every track start fades in cleanly
+    if (offset === 0) {
+      this._warmup = 0;
+      this._bassHistory.fill(0);
+      this._beatCooldown = 20;
+      this._beatTimestamps = [];
+    }
+
     const src = this.context.createBufferSource();
     src.buffer = this._fileBuffer;
     src.loop = true;
@@ -147,13 +155,25 @@ export class AudioEngine {
     if (!this._prevFreqData) this._prevFreqData = new Uint8Array(this.bufferLength);
     this._prevFreqData.set(this.dataArray);
 
+    // Ramp all output values from 0→1 over the first 90 frames (~1.5s).
+    // This prevents the burst of extreme values at track start from slamming the visuals.
+    if (this._warmup < 90) this._warmup++;
+    const ramp = this._warmup / 90;
+    this.bass            *= ramp;
+    this.mid             *= ramp;
+    this.high            *= ramp;
+    this.subBass         *= ramp;
+    this.presence        *= ramp;
+    this.overall         *= ramp;
+    this.spectralFlux    *= ramp;
+    this.spectralCentroid *= ramp;
+
     // Beat detection via local average comparison
     this._bassHistory.push(this.bass);
     this._bassHistory.shift();
     const avgBass = this._bassHistory.reduce((a, b) => a + b, 0) / this._bassHistory.length;
 
     if (this._warmup < 60) {
-      this._warmup++;
       this.beatDetected = false;
     } else if (this._beatCooldown > 0) {
       this._beatCooldown--;
