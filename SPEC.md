@@ -81,13 +81,11 @@ Procedural drum machine + synth. All sound is generated in real time — no audi
 **Shared resources:**
 - Convolution reverb (2-second exponential impulse response, gain 0.22)
 
-**Three tracks:**
+**One track:**
 
 | ID | Name | Style | BPM | Interval |
 |---|---|---|---|---|
-| `cosmic-pulse` | Cosmic Pulse | Techno | 128 | 16th-note `setInterval` at ~117 ms |
 | `nebula-drift` | Nebula Drift | Ambient | — | Chord every 5 s, drone oscillator |
-| `solar-winds` | Solar Winds | Drum & Bass | 170 | 16th-note `setInterval` at ~88 ms |
 
 **Instrument primitives:**
 - `_kick(t, gain)` — sine osc with frequency sweep 160 Hz → 40 Hz over 0.35 s

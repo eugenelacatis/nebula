@@ -11,25 +11,11 @@ import { ParticleSystem } from './ParticleSystem.js';
 // ─── Preset track metadata ────────────────────────────────────────────────────
 const PRESETS = [
   {
-    id:       'cosmic-pulse',
-    label:    'Cosmic Pulse',
-    genre:    'Techno / 128 BPM',
-    icon:     '⚡',
-    color:    '#ff00ff',
-  },
-  {
     id:       'nebula-drift',
     label:    'Nebula Drift',
     genre:    'Ambient',
     icon:     '🌌',
     color:    '#00d4ff',
-  },
-  {
-    id:       'solar-winds',
-    label:    'Solar Winds',
-    genre:    'Drum & Bass / 170 BPM',
-    icon:     '🌪',
-    color:    '#ff6600',
   },
 ];
 
