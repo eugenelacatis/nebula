@@ -26,6 +26,7 @@ export class NebulaApp {
     this.volume          = 0.8;
     this._bloomScale     = 0.46;
     this._particleCount  = 18000;
+    this._skyboxReqId    = 0;   // incremented each call; stale responses are dropped
 
     this._clock     = new THREE.Clock();
     this._disposed  = false;
@@ -188,15 +189,37 @@ export class NebulaApp {
   }
 
   _rebuildParticles(count = 18000) {
-    if (this.ps) this.ps.dispose();
+    const prev = this.ps;
     this.ps = new ParticleSystem(this.scene, count);
+
+    // Carry over wave smooth-state from the previous system so there's no
+    // cold-start flash when the user changes particle count mid-song.
+    if (prev) {
+      this.ps._wAmp   = prev._wAmp;
+      this.ps._wSpeed = prev._wSpeed;
+      this.ps._wK     = prev._wK;
+      this.ps._energy = prev._energy;
+      this.ps._beat   = prev._beat;
+      this.ps._time   = prev._time;
+      // Apply immediately so the first rendered frame is already correct
+      const u = this.ps.uniforms;
+      u.uWaveAmp.value   = prev._wAmp;
+      u.uWaveSpeed.value = prev._wSpeed;
+      u.uWaveK.value     = prev._wK;
+      u.uEnergy.value    = prev._energy;
+      prev.dispose();
+    }
+
     if (this._lastParticleColors) this.ps.setColorScheme(this._lastParticleColors);
   }
 
-  // Fire-and-forget: asks Claude for skybox + particle params then smoothly transitions
+  // Fire-and-forget: asks Claude for skybox + particle params then smoothly transitions.
+  // Uses a sequence ID so a slow response from a previous track can never overwrite
+  // params that were already set by the current track.
   async _updateSkybox(metadata) {
+    const reqId = ++this._skyboxReqId;
     const params = await fetchSkyboxParams(metadata);
-    if (!params) return;
+    if (!params || reqId !== this._skyboxReqId) return;  // stale — a newer track won
     this.skybox.setParams(params);
     if (params.particles) {
       this._lastParticleColors = params.particles;

@@ -11,7 +11,8 @@ export default function App() {
   const [volume,       setVolume]       = useState(80);
   const [bloom,        setBloom]        = useState(46);
   const [particleCount, setParticleCount] = useState(8000);
-  const [uploadLabel,  setUploadLabel]  = useState('Upload your music');
+  const [uploadLabel,    setUploadLabel]    = useState('Upload your music');
+  const [activeLibrary,  setActiveLibrary]  = useState(null);
 
   useEffect(() => {
     appRef.current = new NebulaApp(canvasRef.current);
@@ -21,6 +22,7 @@ export default function App() {
   const handlePresetSelect = (id) => {
     appRef.current?.selectPreset(id);
     setActivePreset(id);
+    setActiveLibrary(null);
     setUploadLabel('Upload your music');
   };
 
@@ -50,8 +52,19 @@ export default function App() {
 
   const handleFileUpload = async (file) => {
     await appRef.current?.loadUploadedFile(file);
-    setUploadLabel(`🎵 ${file.name}`);
+    setUploadLabel(`♪ ${file.name}`);
     setActivePreset(null);
+    setActiveLibrary(null);
+    setIsPlaying(true);
+  };
+
+  const handleLibrarySelect = async (filename) => {
+    const res  = await fetch(`/audio/${encodeURIComponent(filename)}`);
+    const blob = await res.blob();
+    const file = new File([blob], filename, { type: blob.type || 'audio/mpeg' });
+    await appRef.current?.loadUploadedFile(file);
+    setActivePreset(null);
+    setActiveLibrary(filename);
     setIsPlaying(true);
   };
 
@@ -71,6 +84,8 @@ export default function App() {
         onBloomChange={handleBloomChange}
         onParticleToggle={handleParticleToggle}
         onFileUpload={handleFileUpload}
+        activeLibrary={activeLibrary}
+        onLibrarySelect={handleLibrarySelect}
       />
     </>
   );

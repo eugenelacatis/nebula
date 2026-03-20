@@ -4,8 +4,14 @@ const PRESETS = [
   { id: 'nebula-drift', label: 'Nebula Drift', genre: 'Ambient', icon: '1' },
 ];
 
+const LIBRARY = [
+  { file: 'Adele - Hello (Lyrics).mp3',                        label: 'Adele — Hello' },
+  { file: 'Michael Jackson - Smooth Criminal [Lyrics].mp3',    label: 'MJ — Smooth Criminal' },
+];
+
 export default function UI({
   isPlaying, activePreset, volume, bloom, particleCount, uploadLabel,
+  activeLibrary, onLibrarySelect,
   onPresetSelect, onTogglePlay, onVolumeChange, onBloomChange,
   onParticleToggle, onFileUpload,
 }) {
@@ -31,6 +37,23 @@ export default function UI({
               <span className="card-icon">{p.icon}</span>
               <span className="card-label">{p.label}</span>
               <span className="card-genre">{p.genre}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Library */}
+      <section>
+        <p className="section-title">Library</p>
+        <div id="library-list">
+          {LIBRARY.map(track => (
+            <div
+              key={track.file}
+              className={`library-track${activeLibrary === track.file ? ' active' : ''}`}
+              onClick={() => onLibrarySelect(track.file)}
+            >
+              <span className="library-icon">♪</span>
+              <span className="library-label">{track.label}</span>
             </div>
           ))}
         </div>

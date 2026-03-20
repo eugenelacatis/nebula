@@ -190,6 +190,59 @@ section {
   white-space: nowrap;
 }
 
+/* ── Library ─────────────────────────────────────────────────────────── */
+
+#library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.library-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.library-track:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+}
+
+.library-track.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow:
+    0 0 24px var(--accent-glow),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.library-icon {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.library-track.active .library-icon,
+.library-track.active .library-label {
+  color: #ffffff;
+}
+
+.library-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ── Upload ───────────────────────────────────────────────────────────── */
 
 .upload-row {
